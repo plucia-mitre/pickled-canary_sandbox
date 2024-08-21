@@ -22,6 +22,7 @@ import org.mitre.pickledcanary.patterngenerator.output.steps.*;
 import org.mitre.pickledcanary.patterngenerator.output.utils.AllLookupTables;
 import org.mitre.pickledcanary.patterngenerator.output.utils.LookupStepBuilder;
 import org.mitre.pickledcanary.search.Pattern;
+import ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock;
 
 import java.util.*;
 
@@ -31,11 +32,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private final Address currentAddress;
 	private final WildSleighAssembler assembler;
 	private final TaskMonitor monitor;
+	private AssemblyPatternBlock setCtx = null;
 
 	private final List<OrMultiState> orStates;
 
 	private final Deque<Integer> byteStack;
 	private final Deque<PatternContext> contextStack;
+	private final Deque<AssemblyPatternBlock> ctxStack;
 	private PatternContext currentContext;
 	private JSONObject metadata;
 
@@ -60,6 +63,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		this.currentContext = new PatternContext();
 		this.contextStack = new ArrayDeque<>();
+		this.ctxStack = new ArrayDeque<>();
 
 		this.metadata = new JSONObject();
 	}
@@ -283,6 +287,20 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		return null;
 	}
 
+	@Override
+	public Void visitCtx_set(pc_grammar.Ctx_setContext ctx) {
+		visitChildren(ctx);
+		this.setCtx =  ctxStack.pop();
+		System.err.println(setCtx);
+		return null;
+	}
+	
+	@Override
+	public Void visitCtx(pc_grammar.CtxContext ctx) {
+		this.ctxStack.push(AssemblyPatternBlock.fromString(ctx.getText()));
+		return null;
+	}
+
 	private LookupStep makeLookupStepFromParseResults(Collection<AssemblyParseResult> parses) {
 		LookupStepBuilder builder = new LookupStepBuilder(currentContext.tables);
 
@@ -290,7 +308,16 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			if (PickledCanary.DEBUG) {
 				System.err.println("parse = " + p);
 			}
-			AssemblyResolutionResults results = assembler.resolveTree(p, currentAddress);
+
+			AssemblyResolutionResults results;
+
+			/* If the context has been specified in the pattern, use it */
+			if (setCtx != null) {
+				results = assembler.resolveTree(p, currentAddress, setCtx);
+			}
+			else {
+				results = assembler.resolveTree(p, currentAddress);
+			}
 
 			if (monitor.isCancelled()) {
 				// Yield if user wants to cancel operation
