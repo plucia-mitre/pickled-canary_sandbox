@@ -167,7 +167,11 @@ jobs:
       - name: test rust
         run: |
           which rust || env
-          cat \$HOME/.cargo/env
+          echo vvvvvvvv
+          echo $HOME
+          echo wwwwwwwwwwwww
+          echo \$HOME
+          cat $HOME/.cargo/env
       - uses: actions/checkout@v4
       # Used to host cibuildwheel
       - uses: actions/setup-python@v5
