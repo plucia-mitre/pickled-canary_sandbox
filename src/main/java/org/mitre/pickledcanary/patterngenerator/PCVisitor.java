@@ -7,12 +7,20 @@ import ghidra.app.plugin.assembler.AssemblySelector;
 import ghidra.app.plugin.assembler.sleigh.parse.AssemblyParseResult;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolution;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults;
+import ghidra.app.plugin.assembler.sleigh.sem.DefaultAssemblyResolvedPatterns;
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
 import ghidra.asm.wild.WildSleighAssembler;
 import ghidra.asm.wild.WildSleighAssemblerBuilder;
-import ghidra.asm.wild.sem.WildAssemblyResolvedPatterns;
+import ghidra.asm.wild.sem.DefaultWildAssemblyResolvedPatterns;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.lang.DisassemblerContextAdapter;
+import ghidra.program.model.lang.InsufficientBytesException;
+import ghidra.program.model.lang.Register;
+import ghidra.program.model.lang.RegisterValue;
+import ghidra.program.model.lang.UnknownInstructionException;
 import ghidra.program.model.listing.Program;
+import ghidra.program.model.listing.ProgramContext;
+import ghidra.program.model.mem.ByteMemBufferImpl;
 import ghidra.util.task.TaskMonitor;
 
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -35,6 +43,7 @@ import org.mitre.pickledcanary.search.Pattern;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
@@ -42,16 +51,99 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private Address currentAddress;
 	private final WildSleighAssembler assembler;
 	private TaskMonitor monitor;
-	private AssemblyPatternBlock setCtx = null;
+	private SleighLanguage language;
+	private RegisterValue setCtx;
 	
 	private final List<OrMultiState> orStates;
 
 	private final Deque<Integer> byteStack;
 	private final Deque<PatternContext> contextStack;
-	private final Deque<AssemblyPatternBlock> ctxStack;
+	private final Deque<RegisterValue> ctxStack;
 	private PatternContext currentContext;
 	private JSONObject metadata;
 	private final MyErrorListener errorListener;
+	
+	private HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>> variantCtx;
+	
+	/* Needed to reimplement this class, luckily it's small */
+	static class ContextChanges implements DisassemblerContextAdapter {
+		private final RegisterValue contextIn;
+		private final Map<Address, RegisterValue> contextsOut = new TreeMap<>();
+
+		public ContextChanges(RegisterValue contextIn) {
+			this.contextIn = contextIn;
+		}
+
+		@Override
+		public RegisterValue getRegisterValue(Register register) {
+			if (register.getBaseRegister() == contextIn.getRegister()) {
+				return contextIn.getRegisterValue(register);
+			}
+			return null;
+		}
+
+		@Override
+		public void setFutureRegisterValue(Address address, RegisterValue value) {
+			RegisterValue current = contextsOut.get(address);
+			RegisterValue combined = current == null ? value : current.combineValues(value);
+			contextsOut.put(address, combined);
+		}
+
+		public void addFlow(ProgramContext progCtx, Address after) {
+			contextsOut.put(after, progCtx.getFlowValue(contextIn));
+		}
+	}
+
+	public HashMap<Address, RegisterValue> getContextChanges(DefaultAssemblyResolvedPatterns pats, RegisterValue inputCtx) {
+		ContextChanges contextChanges = new ContextChanges(inputCtx);
+		ByteMemBufferImpl buffer = new ByteMemBufferImpl(currentAddress, pats.getInstruction().getVals(), this.language.isBigEndian());
+		
+		/* Use the language to parse the context changes for each encoding
+		 * We might be disassembling the instruction we just assembled */
+		try {
+			language.parse(buffer, contextChanges, false);
+		} catch (InsufficientBytesException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnknownInstructionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		/* A single encoding may change the context at multiple addresses */
+		HashMap<Address, RegisterValue> addressCtx = new HashMap<Address, RegisterValue>();
+		
+		for (Entry<Address, RegisterValue> ent : contextChanges.contextsOut.entrySet()) {
+			addressCtx.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
+		}
+		return addressCtx;
+	}
+
+	private void printContextChanges(HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>> variantCtx) {
+		System.err.print(System.lineSeparator());
+		
+		for (AssemblyParseResult parseResult : variantCtx.keySet()) {
+			System.err.println("Instruction variant: " + parseResult);
+			
+			HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>> encodingCtx = variantCtx.get(parseResult);
+			
+			for (DefaultWildAssemblyResolvedPatterns resolvedPats: encodingCtx.keySet()) {
+				System.err.println("Instruction encoding: " + resolvedPats.getInstruction());
+				
+				HashMap<Address, RegisterValue> addressCtx = encodingCtx.get(resolvedPats);
+				
+				for (Address address: addressCtx.keySet() ) {
+					System.err.println("Context: " + addressCtx.get(address) +  " set at address: " + address);
+					
+					/* For testing purposes, set the new global context to 
+					 * the last possible context change in the HashMap
+					 * We can't fork yet */
+					this.setCtx = addressCtx.get(address);
+				}
+				System.err.print(System.lineSeparator());
+			}
+		}	
+	}
 
 	/**
 	 * Construct visitor to build Step output.
@@ -72,7 +164,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.currentProgram = currentProgram;
 		this.currentAddress = currentAddress;
 		this.monitor = monitor;
-		SleighLanguage language = (SleighLanguage) currentProgram.getLanguage();
+		this.language = (SleighLanguage) currentProgram.getLanguage();
 		WildSleighAssemblerBuilder builder = new WildSleighAssemblerBuilder(language);
 		this.assembler = builder.getAssembler(new AssemblySelector(), currentProgram);
 
@@ -85,6 +177,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		this.metadata = new JSONObject();
 		errorListener = new MyErrorListener();
+		
+		/* Derive initial context register value from current address */ 
+		this.setCtx = this.currentProgram.getProgramContext().getDisassemblyContext(this.currentAddress);
 	}
 
 	/**
@@ -95,7 +190,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.byteStack.clear();
 		this.currentContext = new PatternContext();
 		this.contextStack.clear();
+		this.ctxStack.clear();
 		this.metadata = new JSONObject();
+		this.setCtx = this.currentProgram.getProgramContext().getDisassemblyContext(this.currentAddress);
 	}
 
 	private static void raiseInvalidInstructionException(ParserRuleContext ctx) {
@@ -318,48 +415,64 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	@Override
 	public Void visitCtx_set(pc_grammar.Ctx_setContext ctx) {
 		visitChildren(ctx);
-		this.setCtx =  ctxStack.pop();
+		RegisterValue toSet = ctxStack.pop();
+		/* setCtx always contains the full context register 
+		 * We set the specified value for the specified context variable 
+		 * in that context register */
+		this.setCtx = setCtx.assign(toSet.getRegister(), toSet);
 		System.err.println(setCtx);
 		return null;
 	}
 	
 	@Override
 	public Void visitCtx(pc_grammar.CtxContext ctx) {
-		this.ctxStack.push(AssemblyPatternBlock.fromString(ctx.getText()));
+		/* Right now, the entire context register is our "context variable".
+		 * It should be trivial to adjust this so that it uses a real context variable instead */
+		Register ctxReg = language.getContextBaseRegister();
+		ctxStack.push(new RegisterValue(ctxReg, AssemblyPatternBlock.fromString(ctx.getText()).toBigInteger(ctxReg.getNumBytes())));
 		return null;
 	}
 
 	private LookupStep makeLookupStepFromParseResults(Collection<AssemblyParseResult> parses) {
 
 		LookupStepBuilder builder = new LookupStepBuilder(currentContext.tables);
+		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock.fromRegisterValue(setCtx);
+		
+		this.variantCtx = new HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>>();
 
 		for (AssemblyParseResult p : parses) {
 			if (PickledCanary.DEBUG) {
+				/* Print each instruction variant */
 				System.err.println("parse = " + p);
 			}
 
 			AssemblyResolutionResults results;
 
-			/* If the context has been specified in the pattern, use it */
-			if (setCtx != null) {
-				results = assembler.resolveTree(p, currentAddress, setCtx);
-			}
-			else {
-				results = assembler.resolveTree(p, currentAddress);
-			}
-
+			/* Resolve each instruction variant to get the encodings
+			 * All variants should use the same input context (global context) for resolution
+			 * Encodings for variants which are not valid in the provided context are filtered out
+			 * by the assembler */
+			results = assembler.resolveTree(p, currentAddress, assemblerCtx);
+			
 			if (monitor.isCancelled()) {
 				// Yield if user wants to cancel operation
 				return null;
 			}
+			
+			HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>> encodingCtx = 
+					new HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>();
 
 			for (AssemblyResolution res : results) {
-				if (res instanceof WildAssemblyResolvedPatterns pats) {
+				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
+					/* We must compute the context changes (if any) for every pats,
+					 * as the instruction encodings may affect the global context */
+					encodingCtx.put(pats, getContextChanges(pats, setCtx));
 					builder.addAssemblyPattern(pats);
 				}
 			}
+			variantCtx.put(p, encodingCtx);
 		}
-
+		printContextChanges(this.variantCtx);
 		return builder.buildLookupStep();
 	}
 
