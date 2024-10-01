@@ -1,4 +1,4 @@
-// Copyright (C) 2023 The MITRE Corporation All Rights Reserved
+// Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
 package org.mitre.pickledcanary.patterngenerator.output.utils;
 
@@ -49,7 +49,6 @@ public class LookupStepBuilder {
 			return this;
 
 		List<Integer> noWildcardMaskList = PCBytes.integerList(noWildcardMask.getMaskAll());
-		List<Integer> noWildcardValList = PCBytes.integerList(noWildcardMask.getValsAll());
 
 		// build data instruction for json
 		// lookup step mask exists
@@ -57,18 +56,18 @@ public class LookupStepBuilder {
 			Data data = lookupStep.getData(noWildcardMaskList);
 			if (data instanceof LookupData lookupData) {
 				// if InstructionEncoding does not exist, make one
-				if (!lookupData.hasChoice(noWildcardValList)) {
-					InstructionEncoding ie = new InstructionEncoding(noWildcardValList);
-					lookupData.putChoice(noWildcardValList, ie);
+				if (!lookupData.hasChoice(noWildcardMask.getValsAll())) {
+					InstructionEncoding ie = new InstructionEncoding(noWildcardMask.getValsAll());
+					lookupData.putChoice(noWildcardMask.getValsAll(), ie);
 				}
 				lookupStep.putData(noWildcardMaskList, lookupData);
 			}
 		}
 		else {
 			// no LookupData or InstructionEncoding -- make both
-			InstructionEncoding ie = new InstructionEncoding(noWildcardValList);
-			LookupData lookupData = new LookupData(noWildcardMaskList);
-			lookupData.putChoice(noWildcardValList, ie);
+			InstructionEncoding ie = new InstructionEncoding(noWildcardMask.getValsAll());
+			LookupData lookupData = new LookupData(noWildcardMask.getMaskAll());
+			lookupData.putChoice(noWildcardMask.getValsAll(), ie);
 			lookupStep.putData(noWildcardMaskList, lookupData);
 		}
 
@@ -85,7 +84,7 @@ public class LookupStepBuilder {
 			}
 
 			// get key of table
-			String tableKey = noWildcardMask + "_0";
+			String tableKey = noWildcardMask + "_" + assemblyOperandData.wildcard();
 
 			// It's not a scalar operand
 			if (assemblyOperandData.choice() != null) {
@@ -104,7 +103,7 @@ public class LookupStepBuilder {
 			}
 			Data data = lookupStep.getData(noWildcardMaskList);
 			if (data instanceof LookupData lookupData) {
-				InstructionEncoding ie = lookupData.getChoice(noWildcardValList);
+				InstructionEncoding ie = lookupData.getChoice(noWildcardMask.getValsAll());
 				if (!ie.matches(ot)) {
 					ie.addOperand(ot);
 				}

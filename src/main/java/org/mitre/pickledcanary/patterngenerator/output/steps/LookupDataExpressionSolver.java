@@ -1,5 +1,5 @@
 
-// Copyright (C) 2023 The MITRE Corporation All Rights Reserved
+// Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
@@ -183,16 +183,18 @@ public class LookupDataExpressionSolver {
 		long res;
 		try {
 			res = getInstructionBytes(tf, input, sp);
-		} catch (MemoryAccessException e) {
+		}
+		catch (MemoryAccessException e) {
 			throw new ExpressionMemoryAccessException(tf, e);
 		}
 
 		res >>= tf.getShift();
 		if (tf.hasSignbit()) {
 			return TokenField.signExtend(res, tf.getBitEnd() - tf.getBitStart());
-		} else {
-			return TokenField.zeroExtend(res, tf.getBitEnd() - tf.getBitStart());
 		}
+
+		return TokenField.zeroExtend(res, tf.getBitEnd() - tf.getBitStart());
+
 	}
 
 	private static long computeOperandValueExpression(OperandValue ov, MemBuffer input, int sp, int len) {
