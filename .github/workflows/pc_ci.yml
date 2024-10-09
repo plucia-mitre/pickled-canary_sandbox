@@ -213,6 +213,7 @@ jobs:
           cd ../output_release_coverage
           zip -r pickled_canary-coverage_reports-${{ github.ref_name }}.zip *
           mv pickled_canary-coverage_reports-${{ github.ref_name }}.zip ../
+          mv python-wheels-* ../
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
