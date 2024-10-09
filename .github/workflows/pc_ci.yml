@@ -203,7 +203,7 @@ jobs:
       - name: Make zip
         run: |
           cd output_release
-          ls -laR 
+          mv python-wheels-* ../
           mkdir ../output_release_coverage
           mv *_coverage_report ../output_release_coverage
           mv pickled_canary_rust_tools_mac_x86_64/treesearchtool pickled_canary_rust_tools/treesearchtool_mac_x86_64
