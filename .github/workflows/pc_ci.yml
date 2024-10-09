@@ -177,7 +177,7 @@ jobs:
             CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
       - uses: actions/upload-artifact@v4
         with:
-          name: python-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          name: python-wheels-${{ matrix.os }}-${{ github.ref_name }}
           path: ./search/wheelhouse/*.whl
 
   # Bundle up a draft release if the version is tagged
@@ -214,4 +214,5 @@ jobs:
           gh release create --draft ${{ github.ref_name }}
           "pickled_canary-${{ github.ref_name }}.zip"
           "pickled_canary-coverage_reports-${{ github.ref_name }}.zip"
+          "python-wheels-*"
           --title "Pickled Canary ${{ github.ref_name}}"
