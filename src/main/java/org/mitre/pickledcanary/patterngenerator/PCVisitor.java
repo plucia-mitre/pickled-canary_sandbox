@@ -3,8 +3,48 @@
 
 package org.mitre.pickledcanary.patterngenerator;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Stack;
+import java.util.TreeMap;
+
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.mitre.pickledcanary.PickledCanary;
+import org.mitre.pickledcanary.patterngenerator.generated.pc_grammar;
+import org.mitre.pickledcanary.patterngenerator.generated.pc_grammarBaseVisitor;
+import org.mitre.pickledcanary.patterngenerator.generated.pc_lexer;
+import org.mitre.pickledcanary.patterngenerator.output.steps.AnyByteSequence;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Byte;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Jmp;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Label;
+import org.mitre.pickledcanary.patterngenerator.output.steps.LookupStep;
+import org.mitre.pickledcanary.patterngenerator.output.steps.MaskedByte;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Match;
+import org.mitre.pickledcanary.patterngenerator.output.steps.NegativeLookahead;
+import org.mitre.pickledcanary.patterngenerator.output.steps.OrMultiState;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Split;
+import org.mitre.pickledcanary.patterngenerator.output.steps.SplitMulti;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Step;
+import org.mitre.pickledcanary.patterngenerator.output.utils.AllLookupTables;
+import org.mitre.pickledcanary.patterngenerator.output.utils.LookupStepBuilder;
+import org.mitre.pickledcanary.search.Pattern;
+
 import ghidra.app.plugin.assembler.AssemblySelector;
 import ghidra.app.plugin.assembler.sleigh.parse.AssemblyParseResult;
+import ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolution;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults;
 import ghidra.app.plugin.assembler.sleigh.sem.DefaultAssemblyResolvedPatterns;
@@ -22,28 +62,6 @@ import ghidra.program.model.listing.Program;
 import ghidra.program.model.listing.ProgramContext;
 import ghidra.program.model.mem.ByteMemBufferImpl;
 import ghidra.util.task.TaskMonitor;
-
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.mitre.pickledcanary.PickledCanary;
-import org.mitre.pickledcanary.patterngenerator.generated.pc_grammar;
-import org.mitre.pickledcanary.patterngenerator.generated.pc_grammarBaseVisitor;
-import org.mitre.pickledcanary.patterngenerator.generated.pc_lexer;
-import org.mitre.pickledcanary.patterngenerator.output.steps.Byte;
-import org.mitre.pickledcanary.patterngenerator.output.steps.*;
-import org.mitre.pickledcanary.patterngenerator.output.utils.AllLookupTables;
-import org.mitre.pickledcanary.patterngenerator.output.utils.LookupStepBuilder;
-import org.mitre.pickledcanary.search.Pattern;
-import ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock;
-
-import java.util.*;
-import java.util.Map.Entry;
 
 public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
@@ -64,6 +82,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private final MyErrorListener errorListener;
 	
 	private HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>> variantCtx;
+	
+//	private final HashMap<Address, HashSet<RegisterValue>> futureContexts;
+	private  HashSet<RegisterValue> nextContexts;
+	private final Stack<ContextStackItem> asmContextStack;
+	private final Stack<Integer> asmContextOrStack;
+	private RegisterValue asmCurrentContext;
+	private PatternContext outputContext;
 	
 	/* Needed to reimplement this class, luckily it's small */
 	static class ContextChanges implements DisassemblerContextAdapter {
@@ -102,11 +127,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		 * We might be disassembling the instruction we just assembled */
 		try {
 			language.parse(buffer, contextChanges, false);
-		} catch (InsufficientBytesException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnknownInstructionException e) {
-			// TODO Auto-generated catch block
+		} catch (InsufficientBytesException | UnknownInstructionException e) {
 			e.printStackTrace();
 		}
 		
@@ -180,6 +201,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		
 		/* Derive initial context register value from current address */ 
 		this.setCtx = this.currentProgram.getProgramContext().getDisassemblyContext(this.currentAddress);
+		
+//		this.futureContexts = new HashMap<>();
+		this.nextContexts = new HashSet<>();
+		this.asmContextStack = new Stack<>();
+		this.asmContextOrStack = new Stack<>();
+		this.outputContext = new PatternContext();
 	}
 
 	/**
@@ -193,21 +220,26 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.ctxStack.clear();
 		this.metadata = new JSONObject();
 		this.setCtx = this.currentProgram.getProgramContext().getDisassemblyContext(this.currentAddress);
+		
+//		this.futureContexts.clear();;
+		this.asmContextStack.clear();;
+		this.asmContextOrStack.clear();
+		this.outputContext = new PatternContext();
 	}
 
-	private static void raiseInvalidInstructionException(ParserRuleContext ctx) {
-		String instructionText = ctx.getText();
+	private static void raiseInvalidInstructionException(LookupStep lookupStep) {
+		String instructionText = lookupStep.getInstructionText();
 
 		if (instructionText.chars().filter(ch -> ch == '`').count() % 2 != 0) {
 			throw new QueryParseException(
 				"This line doesn't have a balanced number of '`' characters and didn't assemble to any instruction",
-				ctx);
+				lookupStep);
 		}
 		throw new QueryParseException(
 			"An assembly instruction in your pattern (" + instructionText +
 				") did not return any output. Make sure your assembly instructions" +
 				" are valid or that you are using a binary with the same architecture.",
-			ctx);
+			lookupStep);
 	}
 
 	@Override
@@ -387,25 +419,27 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			System.out.println("CURRENTLY PROCESSING: " + ctx.getText());
 		}
 
-		Collection<AssemblyParseResult> parses = assembler.parseLine(ctx.getText())
-				.stream()
-				.filter(p -> {
-					if (PickledCanary.DEBUG && p.isError()) {
-						System.err.println("Error in AssemblyParseResult: " + p);
-					}
-					return !p.isError();
-				})
-				.toList();
-		if (parses.isEmpty()) {
-			raiseInvalidInstructionException(ctx);
-		}
-
-		LookupStep lookupStep = this.makeLookupStepFromParseResults(parses);
-		if (lookupStep == null)
-			return null;
-		if (lookupStep.isEmpty()) {
-			raiseInvalidInstructionException(ctx);
-		}
+//		Collection<AssemblyParseResult> parses = assembler.parseLine(ctx.getText())
+//				.stream()
+//				.filter(p -> {
+//					if (PickledCanary.DEBUG && p.isError()) {
+//						System.err.println("Error in AssemblyParseResult: " + p);
+//					}
+//					return !p.isError();
+//				})
+//				.toList();
+//		if (parses.isEmpty()) {
+//			raiseInvalidInstructionException(ctx);
+//		}
+//
+//		LookupStep lookupStep = this.makeLookupStepFromParseResults(parses);
+//		if (lookupStep == null)
+//			return null;
+//		if (lookupStep.isEmpty()) {
+//			raiseInvalidInstructionException(ctx);
+//		}
+		
+		LookupStep lookupStep = new LookupStep(ctx.getText(), ctx.start.getLine(), ctx.start.getCharPositionInLine());
 
 		this.currentContext.steps().add(lookupStep);
 
@@ -433,12 +467,145 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		return null;
 	}
 
-	private LookupStep makeLookupStepFromParseResults(Collection<AssemblyParseResult> parses) {
 
-		LookupStepBuilder builder = new LookupStepBuilder(currentContext.tables);
-		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock.fromRegisterValue(setCtx);
+	
+	
+	
+	
+	public void doVisitorPart2() {
+		System.out.println("VISITOR PART 2!!!");
+		// set first context
+		asmCurrentContext = this.currentProgram.getProgramContext().getDisassemblyContext(currentAddress);
+		asmContextStack.add(new ContextStackItem(asmCurrentContext, 0));
+		while (asmContextStack.size() != 0) {
+			ContextStackItem csi = asmContextStack.removeLast();
+			asmCurrentContext = csi.context;
+			for (int i = csi.startIdx; i < this.currentContext.steps.size(); i++) {
+				Step step = this.currentContext.steps.get(i);
+				System.out.println("STEP TYPE: " + step.getStepType().toString());
+				switch (step.getStepType()) {
+				case Step.StepType.SPLITMULTI:
+					int nextInst = visit((SplitMulti) step);
+					i = nextInst - 1;
+					break;
+				case Step.StepType.SPLIT:
+					nextInst = visit((Split) step);
+					i = nextInst - 1;
+					break;
+				case Step.StepType.JMP:
+					nextInst = visit((Jmp) step);
+					i = nextInst - 1;
+					break;
+				case Step.StepType.LOOKUP:
+					visit(i, (LookupStep) step);
+					break;
+				default:
+					visit(step);
+				}
+			}
+			if (asmContextStack.size() != 0) {
+				int correspondingSplitIndex = asmContextOrStack.removeLast();
+				this.outputContext.steps().add(new Jmp(0));
+				System.out.println(this.outputContext.steps.get(correspondingSplitIndex).getStepType().toString());
+				if (this.outputContext.steps().get(correspondingSplitIndex).getStepType() == Step.StepType.SPLIT) {
+					Split split = (Split) this.outputContext.steps().get(correspondingSplitIndex);
+					split.setDest2(this.outputContext.steps().size());
+				} else {
+					SplitMulti sm = (SplitMulti) this.outputContext.steps().get(correspondingSplitIndex);
+					if (sm.getDests().size() == 1) {
+						Split newSplit = new Split(sm.getDests().get(0));
+						newSplit.setDest2(this.outputContext.steps().size());
+						this.outputContext.steps().set(correspondingSplitIndex, newSplit);
+					} else {
+						sm.addDest(this.outputContext.steps().size());
+					}
+				}
+			}
+		}
+		for (int i = 0; i < this.outputContext.steps().size(); i++) {
+			if (this.outputContext.steps().get(i).getStepType() == Step.StepType.JMP) {
+				((Jmp) outputContext.steps().get(i)).setDest(this.outputContext.steps().size());
+			}
+		}
+	}
+	
+	private int visit(SplitMulti splitMultiStep) {
+		for (int i = 1; i < splitMultiStep.getDests().size(); i++) {
+			asmContextOrStack.add(this.outputContext.steps().size());
+			asmContextStack.add(new ContextStackItem(asmCurrentContext, splitMultiStep.getDests().get(i)));
+		}
+		this.outputContext.steps().add(new SplitMulti(splitMultiStep.getDests().get(0)));
+		return splitMultiStep.getDests().get(0);
+	}
+	
+	private int visit(Split splitStep) {
+		asmContextOrStack.add(this.outputContext.steps().size());
+		asmContextStack.add(new ContextStackItem(asmCurrentContext, splitStep.getDest2()));
+		this.outputContext.steps().add(new Split(splitStep.getDest1()));
+		return splitStep.getDest1();
+	}
+	
+	private int visit(Jmp jmpStep) {
+		return jmpStep.getDest();
+	}
+	
+	private void visit(int tokenIdx, LookupStep lookupStep) {
+		System.out.println("Current address " + currentAddress.toString());
+		Collection<AssemblyParseResult> parses = assembler.parseLine(lookupStep.getInstructionText())
+				.stream()
+				.filter(p -> {
+					if (PickledCanary.DEBUG && p.isError()) {
+						System.err.println("Error in AssemblyParseResult: " + p);
+					}
+					return !p.isError();
+				})
+				.toList();
+		if (parses.isEmpty()) {
+			raiseInvalidInstructionException(lookupStep);
+		}
+
+		lookupStep = this.makeLookupStepFromParseResults(lookupStep, parses);
+		if (lookupStep == null)
+			return;
+		if (lookupStep.isEmpty()) {
+			raiseInvalidInstructionException(lookupStep);
+		}
+
+		System.out.println("ADDING LOOKUP STEP:");
+		System.out.println(lookupStep);
+		this.outputContext.steps().add(lookupStep);
+		
+		/////
+		if (nextContexts.size() == 0 || tokenIdx == this.currentContext.steps().size() - 1) {
+			return;
+		}
+//		if (!futureContexts.containsKey(currentAddress)) {
+//			return;
+//		}
+//		Object[] nextContexts = futureContexts.get(currentAddress).toArray(); //TODO: get next contexts
+		Object[] nextContexts = this.nextContexts.toArray();
+		asmCurrentContext = (RegisterValue) nextContexts[0];
+		System.out.println("Context is now " + asmCurrentContext.toString());
+		for (int i = 1; i < nextContexts.length; i++) {
+			asmContextOrStack.add(this.outputContext.steps().size());
+			asmContextStack.add(new ContextStackItem((RegisterValue) nextContexts[i], tokenIdx + 1));
+		}
+		if (nextContexts.length > 1) {
+			this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
+		}
+	}
+	
+	private void visit(Step step) {
+		this.outputContext.steps().add(step);
+	}
+	
+	private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep, Collection<AssemblyParseResult> parses) {
+
+		LookupStepBuilder builder = new LookupStepBuilder(lookupStep, outputContext.tables);
+		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock.fromRegisterValue(asmCurrentContext);
 		
 		this.variantCtx = new HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>>();
+		this.nextContexts = new HashSet<>();
 
 		for (AssemblyParseResult p : parses) {
 			if (PickledCanary.DEBUG) {
@@ -468,6 +635,17 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					 * as the instruction encodings may affect the global context */
 					encodingCtx.put(pats, getContextChanges(pats, setCtx));
 					builder.addAssemblyPattern(pats);
+					
+					HashMap<Address, RegisterValue> encodingContextChanges = getContextChanges(pats, asmCurrentContext);
+					System.out.println("produced " + encodingContextChanges.size() + " contexts");
+					for (Address a : encodingContextChanges.keySet()) {
+						nextContexts.add(encodingContextChanges.get(a));
+//						if (!futureContexts.containsKey(a)) {
+//							futureContexts.put(a, new HashSet<>());
+//						}
+						System.out.println("putting in address " + a.toString());
+//						futureContexts.get(a).add(encodingContextChanges.get(a));
+					}
 				}
 			}
 			variantCtx.put(p, encodingCtx);
@@ -475,6 +653,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		printContextChanges(this.variantCtx);
 		return builder.buildLookupStep();
 	}
+	
+	
+	
+	
 
 	/**
 	 * Return the results of having processed the pattern as a {@link JSONObject} which can be used
@@ -485,8 +667,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 * @return A {@link JSONObject} containing the processed equivalent of the last pattern visited.
 	 */
 	public JSONObject getJSONObject(boolean withDebugInfo) {
-		this.currentContext.canonicalize();
-		JSONObject output = this.currentContext.getJson(this.metadata);
+		this.outputContext.canonicalize();
+		JSONObject output = this.outputContext.getJson(this.metadata);
 
 		if (withDebugInfo) {
 			output.append("compile_info", this.getDebugJson());
@@ -506,8 +688,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 *         visited.
 	 */
 	public Pattern getPattern() {
-		this.currentContext.canonicalize();
-		return this.currentContext.getPattern();
+		this.outputContext.canonicalize();
+		return this.outputContext.getPattern();
 	}
 
 	private JSONObject getDebugJson() {
@@ -610,7 +792,19 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		var progContext = parser.prog();
 
 		this.visit(progContext);
+		
+		this.doVisitorPart2();
 
 		monitor.setIndeterminate(false);
+	}
+	
+	static class ContextStackItem {
+		RegisterValue context;
+		int startIdx;
+		
+		public ContextStackItem(RegisterValue context, int startIdx) {
+			this.context = context;
+			this.startIdx = startIdx;
+		}
 	}
 }

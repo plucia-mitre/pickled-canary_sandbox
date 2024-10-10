@@ -18,14 +18,15 @@ import java.util.Set;
  */
 public class LookupStepBuilder {
 	private final AllLookupTables tables;
-	private final LookupStep lookupStep = new LookupStep();
+	private final LookupStep lookupStep;
 
 	/**
 	 * Create a new instance of this builder.
 	 * @param tables reference to the lookup tables so they can be updated as patterns are parsed.
 	 */
-	public LookupStepBuilder(AllLookupTables tables) {
+	public LookupStepBuilder(LookupStep lookupStep, AllLookupTables tables) {
 		this.tables = tables;
+		this.lookupStep = lookupStep;
 	}
 
 	/**
