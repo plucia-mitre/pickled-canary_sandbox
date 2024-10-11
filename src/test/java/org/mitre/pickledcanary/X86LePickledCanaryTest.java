@@ -294,7 +294,7 @@ public class X86LePickledCanaryTest extends PickledCanaryTest {
 	@Test
 	public void testEmptyCommand() {
 		exceptionRule.expect(QueryParseException.class);
-		exceptionRule.expectMessage("Failed to parse query at line 2 col 1: mismatched input '`' expecting {'=', '&', ANY_BYTES, LABEL, BYTE_STRING}");
+		exceptionRule.expectMessage("Failed to parse query at line 2 col 1: mismatched input '`' expecting {'=', '&', '^', ANY_BYTES, LABEL, BYTE_STRING}");
 		final String testQuery = ";something\n``";
 		generatePatternTestHelper(testQuery, "");
 	}

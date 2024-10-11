@@ -683,13 +683,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 					HashMap<Address, RegisterValue> encodingContextChanges = getContextChanges(pats,
 							asmCurrentContext);
-					System.out.println("produced " + encodingContextChanges.size() + " contexts");
 					for (Address a : encodingContextChanges.keySet()) {
 						nextContexts.add(encodingContextChanges.get(a));
 //						if (!futureContexts.containsKey(a)) {
 //							futureContexts.put(a, new HashSet<>());
 //						}
-						System.out.println("putting in address " + a.toString());
 //						futureContexts.get(a).add(encodingContextChanges.get(a));
 					}
 				}
