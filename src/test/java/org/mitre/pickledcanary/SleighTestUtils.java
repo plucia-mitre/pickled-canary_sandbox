@@ -6,11 +6,9 @@ import java.net.URL;
 import org.xml.sax.SAXException;
 
 import generic.jar.ResourceFile;
+import generic.test.AbstractGenericTest;
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
 import ghidra.app.plugin.processors.sleigh.SleighLanguageProvider;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 public class SleighTestUtils {
 	/* Retrieves a Sleigh resource from a filename */
@@ -26,15 +24,15 @@ public class SleighTestUtils {
 	
 	/* Quickly create a SleighLanguage instance from .ldefs */
 	public static SleighLanguage lazyLanguage(ResourceFile lDefsFile) 
-			throws SAXException, IOException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+			throws SAXException, IOException {
 
-		/* This constructor is private so we need to make it accessible before calling it */
-		Constructor<SleighLanguageProvider> constructor = SleighLanguageProvider.class.getDeclaredConstructor(ResourceFile.class);
-		constructor.setAccessible(true);
-	    SleighLanguageProvider provider = constructor.newInstance(lDefsFile);
-	    
+		/* This constructor is private so we need to invoke it using the
+		 * invokeConstructor method */
+		SleighLanguageProvider provider = (SleighLanguageProvider) AbstractGenericTest.invokeConstructor(
+				SleighLanguageProvider.class, new Class<?>[] {ResourceFile.class}, new Object[] {lDefsFile});
+
 		/* Get the SleighLanguage we just added to SleighLanguageProvider 
 		 * using LanguageID from its LanguageDescription */
-		return (SleighLanguage) provider.getLanguage(provider.getLanguageDescriptions()[0].getLanguageID());
+	    return (SleighLanguage) provider.getLanguage(provider.getLanguageDescriptions()[0].getLanguageID());
 	}
 }
