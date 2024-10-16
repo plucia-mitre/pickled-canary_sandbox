@@ -9,7 +9,7 @@ public abstract class Step {
 
 	public enum StepType {
 		BYTE, MASKEDBYTE, MATCH, JMP, SPLIT, SPLITMULTI, SAVE, ANYBYTE, ANYBYTESEQUENCE, LOOKUP, NEGATIVELOOKAHEAD,
-		SAVESTART, LABEL
+		SAVESTART, LABEL, SETCONTEXT
 	}
 
 	protected final StepType stepType;
