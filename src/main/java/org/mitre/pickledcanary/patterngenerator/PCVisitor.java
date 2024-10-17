@@ -377,19 +377,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			Jmp j = (Jmp) this.currentContext.steps().get(jmp_idx);
 			j.setDest(this.currentContext.steps().size());
 		}
-
-		// TODO: maybe remove this, so that visitor 2 doesn't have to handle both
-		// split and splitmulti (visitor 2 already turns all splitmulti with 2
-		// dests into a split)
-		// If we have exactly two OR options, change from a SplitMulti to a Split
-		if (middleSteps.size() == 1) {
-			List<Integer> origDests = ((SplitMulti) this.currentContext.steps()
-					.get(currentOrState.getStartStep())).getDests();
-
-			Split newSplit = new Split(origDests.get(0));
-			newSplit.setDest2(origDests.get(1));
-			this.currentContext.steps().set(currentOrState.getStartStep(), newSplit);
-		}
 		return null;
 	}
 
@@ -492,10 +479,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					int nextInst = visit((SplitMulti) step);
 					i = nextInst - 1;
 					break;
-				case Step.StepType.SPLIT:
-					nextInst = visit((Split) step);
-					i = nextInst - 1;
-					break;
 				case Step.StepType.JMP:
 					nextInst = visit((Jmp) step);
 					i = nextInst - 1;
@@ -516,14 +499,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				this.outputContext.steps().add(new Jmp(0));
 				// add the next destination for a Split or SplitMulti block
 				int correspondingSplitIndex = asmContextOrStack.removeLast();
-				Step splitStep = this.outputContext.steps().get(correspondingSplitIndex);
-				if (splitStep.getStepType() == Step.StepType.SPLIT) {
-					Split split = (Split) splitStep;
-					split.setDest2(this.outputContext.steps().size());
-				} else {
-					SplitMulti sm = (SplitMulti) splitStep;
-					sm.addDest(this.outputContext.steps().size());
-				}
+				SplitMulti sm = (SplitMulti) this.outputContext.steps().get(correspondingSplitIndex);
+				sm.addDest(this.outputContext.steps().size());
 			}
 		}
 
@@ -559,15 +536,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 		this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
 		return splitMultiStep.getDests().get(0);
-	}
-
-	// Returns the index of the step in the output of the first visitor from where the next branch
-	// should begin
-	private int visit(Split splitStep) {
-		asmContextOrStack.add(this.outputContext.steps().size());
-		asmContextStack.add(new ContextStackItem(asmCurrentContext, splitStep.getDest2()));
-		this.outputContext.steps().add(new Split(this.outputContext.steps().size() + 1));
-		return splitStep.getDest1();
 	}
 
 	// returns which step in the output of the first visitor to jump to in order to continue
