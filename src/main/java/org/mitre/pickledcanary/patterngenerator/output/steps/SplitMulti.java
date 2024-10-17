@@ -54,4 +54,13 @@ public class SplitMulti extends Step {
 			}
 		}
 	}
+
+	@Override
+	public String toString() {
+		List<String> strDests = new ArrayList<>();
+		for (int dest : dests) {
+			strDests.add(String.valueOf(dest));
+		}
+		return "SPLITMULTI Dests: [" + String.join(",", strDests) + "]";
+	}
 }

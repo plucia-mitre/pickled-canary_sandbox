@@ -45,4 +45,9 @@ public class MaskedByte extends StepBranchless {
 		out.put("value", this.value);
 		return out;
 	}
+
+	@Override
+	public String toString() {
+		return "MASKED BYTE Mask: " + mask + "; Value: " + value;
+	}
 }

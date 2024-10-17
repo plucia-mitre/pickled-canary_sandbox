@@ -12,4 +12,9 @@ public class Match extends StepBranchless {
 	public Match(String note) {
 		super(StepType.MATCH, note);
 	}
+
+	@Override
+	public String toString() {
+		return "MATCH";
+	}
 }

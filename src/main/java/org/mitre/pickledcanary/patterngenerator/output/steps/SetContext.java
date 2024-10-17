@@ -13,8 +13,13 @@ public class SetContext extends StepBranchless {
 		super(StepType.SETCONTEXT, null);
 		this.toSet = toSet;
 	}
-	
+
 	public RegisterValue getContextVar() {
 		return this.toSet;
+	}
+
+	@Override
+	public String toString() {
+		return "SET CONTEXT: " + toSet.toString();
 	}
 }

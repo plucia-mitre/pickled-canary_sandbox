@@ -29,4 +29,9 @@ public class NegativeLookahead extends StepBranchless {
 		out.put("pattern", this.pattern);
 		return out;
 	}
+
+	@Override
+	public String toString() {
+		return "NEGATIVE LOOK AHEAD Pattern: " + pattern.toString();
+	}
 }

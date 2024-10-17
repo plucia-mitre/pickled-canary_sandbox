@@ -12,4 +12,9 @@ public class SaveStart extends StepBranchless {
 	public SaveStart(String note) {
 		super(StepType.SAVESTART, note);
 	}
+
+	@Override
+	public String toString() {
+		return "SAVE START";
+	}
 }

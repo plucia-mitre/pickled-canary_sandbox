@@ -65,4 +65,9 @@ public class Split extends Step {
 			this.dest2 += amount;
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "SPLIT Dest1: " + this.dest1 + "; Dest2: " + this.dest2;
+	}
 }

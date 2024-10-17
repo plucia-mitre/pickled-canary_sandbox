@@ -40,4 +40,9 @@ public class Jmp extends Step {
 			this.dest += amount;
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "JMP Dest: " + this.dest;
+	}
 }

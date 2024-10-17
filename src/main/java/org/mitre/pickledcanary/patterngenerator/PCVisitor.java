@@ -71,7 +71,7 @@ import ghidra.util.task.TaskMonitor;
  * Assembly instructions and make the pattern context-aware. An instruction can generate different
  * encodings, each of which can change the context to a different value. New branches in the pattern
  * are created for each context.
- * 
+ *
  * Each step is handled by its own visitor.
  */
 public class PCVisitor extends pc_grammarBaseVisitor<Void> {
@@ -142,8 +142,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				pats.getInstruction().getVals(), this.language.isBigEndian());
 
 		/*
-		 * Use the language to parse the context changes for each encoding 
-		 * We might be disassembling the instruction we just assembled
+		 * Use the language to parse the context changes for each encoding We might be disassembling
+		 * the instruction we just assembled
 		 */
 		try {
 			language.parse(buffer, contextChanges, false);
@@ -152,7 +152,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		/* A single encoding may change the context at multiple addresses */
-		HashMap<Address, RegisterValue> addressCtx = new HashMap<Address, RegisterValue>();
+		HashMap<Address, RegisterValue> addressCtx = new HashMap<>();
 
 		for (Entry<Address, RegisterValue> ent : contextChanges.contextsOut.entrySet()) {
 			addressCtx.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
@@ -186,11 +186,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 	/**
 	 * Construct visitor to build Step output.
-	 * 
+	 *
 	 * You likely want to call {@link #lexParseAndVisit(String, TaskMonitor)} once you've created an
 	 * instance of this class. After that, {@link #getJSONObject(boolean)} or {@link #getPattern()}
 	 * can be used to get the pattern output for export or searching respectively
-	 * 
+	 *
 	 * This visitor can be reused for multiple patterns IF the reset method is called between calls
 	 * to {@link #lexParseAndVisit(String, TaskMonitor)}.
 	 *
@@ -235,9 +235,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.ctxStack.clear();
 		this.metadata = new JSONObject();
 
-//		this.futureContexts.clear();;
+//		this.futureContexts.clear();
 		this.asmContextStack.clear();
-		;
 		this.asmContextOrStack.clear();
 		this.outputContext = new PatternContext();
 	}
@@ -380,8 +379,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		// TODO: maybe remove this, so that visitor 2 doesn't have to handle both
-		//  split and splitmulti (visitor 2 already turns all splitmulti with 2
-		//  dests into a split)
+		// split and splitmulti (visitor 2 already turns all splitmulti with 2
+		// dests into a split)
 		// If we have exactly two OR options, change from a SplitMulti to a Split
 		if (middleSteps.size() == 1) {
 			List<Integer> origDests = ((SplitMulti) this.currentContext.steps()
@@ -454,8 +453,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	@Override
 	public Void visitCtx(pc_grammar.CtxContext ctx) {
 		/*
-		 * Right now, the entire context register is our "context variable"
-		 * It should be trivial to adjust this so that it uses a real context variable instead
+		 * Right now, the entire context register is our "context variable" It should be trivial to
+		 * adjust this so that it uses a real context variable instead
 		 */
 		Register ctxReg = language.getContextBaseRegister();
 		ctxStack.push(new RegisterValue(ctxReg,
@@ -466,7 +465,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	/**
 	 * After the user pattern is passed through the first visitor above, run the output through this
 	 * second visitor to make the generated pattern context-aware.
-	 * 
+	 *
 	 * TODO: refactor this to actually use the visitor pattern?
 	 */
 	public void doVisitorPart2() {
@@ -543,6 +542,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				((Jmp) nextStep).setDest(this.outputContext.steps().size());
 			}
 		}
+		for (int i = 0; i < this.outputContext.steps.size(); i++) {
+			System.out.println(i + " " + this.outputContext.steps.get(i).toString());
+		}
 	}
 
 	// Returns the index of the step in the output of the first visitor from where the next branch
@@ -606,8 +608,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private void visit(SetContext setContextStep) {
 		RegisterValue toSet = setContextStep.getContextVar();
 		/*
-		 * asmCurrentContext always contains the full context register
-		 * We set the specified value for the specified context variable in that context register
+		 * asmCurrentContext always contains the full context register We set the specified value
+		 * for the specified context variable in that context register
 		 */
 		asmCurrentContext = asmCurrentContext.assign(toSet.getRegister(), toSet);
 	}
@@ -646,7 +648,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock
 				.fromRegisterValue(asmCurrentContext);
 
-		this.variantCtx = new HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>>();
+		this.variantCtx = new HashMap<>();
 		this.nextContexts = new HashSet<>();
 
 		for (AssemblyParseResult p : parses) {
@@ -658,9 +660,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			AssemblyResolutionResults results;
 
 			/*
-			 * Resolve each instruction variant to get the encodings
-			 * All variants should use the same input context (global context) for resolution
-			 * Encodings for variants which are not valid in the provided context are filtered out by the assembler
+			 * Resolve each instruction variant to get the encodings All variants should use the
+			 * same input context (global context) for resolution Encodings for variants which are
+			 * not valid in the provided context are filtered out by the assembler
 			 */
 			results = assembler.resolveTree(p, currentAddress, assemblerCtx);
 
@@ -702,7 +704,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	/**
 	 * Return the results of having processed the pattern as a {@link JSONObject} which can be used
 	 * to output this compiled pattern.
-	 * 
+	 *
 	 * @param withDebugInfo Include an extra "compile_info" tag with debug information (or not)
 	 * @return A {@link JSONObject} containing the processed equivalent of the last pattern visited.
 	 */
@@ -722,7 +724,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	/**
 	 * Return the results of having processed the pattern as a {@link Pattern} which can be used to
 	 * perform a search.
-	 * 
+	 *
 	 * @return A {@link Pattern} object containing the processed equivalent of the last pattern
 	 *         visited.
 	 */
@@ -764,7 +766,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		/**
 		 * Get raw JSON (without) any debug or compile info
-		 * 
+		 *
 		 * @return the JSON for this context
 		 */
 		JSONObject getJson(JSONObject metadata) {
@@ -783,7 +785,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 	/**
 	 * Update the address used by this visitor to assemble given instructions.
-	 * 
+	 *
 	 * @param address The address that we want to compile at
 	 */
 	public void setCurrentAddress(Address address) {
@@ -805,11 +807,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	/**
 	 * Process the given pattern, making results available in {@link #getPattern()} or
 	 * {@link #getJSONObject(boolean)} methods.
-	 * 
+	 *
 	 * Call {@link #reset()} in between calls to this method if reusing this instance. If
 	 * currentAddress has changed since this instance was created, call
 	 * {@link #setCurrentAddress(Address)} before calling this method
-	 * 
+	 *
 	 * @param pattern    The pattern string to parse into steps
 	 * @param newMonitor A monitor to display progress
 	 */
