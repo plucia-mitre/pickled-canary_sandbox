@@ -122,4 +122,8 @@ public class LookupStep extends StepBranchless {
 	public boolean isEmpty() {
 		return this.data.isEmpty();
 	}
+	
+	public LookupStep copy() {
+		return new LookupStep(instructionText, lineNumber, charPosition, note);
+	}
 }

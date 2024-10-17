@@ -499,7 +499,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					i = nextInst - 1;
 					break;
 				case Step.StepType.LOOKUP:
-					visit(i, (LookupStep) step);
+					visit(i, ((LookupStep) step).copy());
 					break;
 				case Step.StepType.SETCONTEXT:
 					visit((SetContext) step);
