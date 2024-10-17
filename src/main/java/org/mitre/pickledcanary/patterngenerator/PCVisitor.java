@@ -379,6 +379,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			j.setDest(this.currentContext.steps().size());
 		}
 
+		// TODO: maybe remove this, so that visitor 2 doesn't have to handle both
+		//  split and splitmulti (visitor 2 already turns all splitmulti with 2
+		//  dests into a split)
 		// If we have exactly two OR options, change from a SplitMulti to a Split
 		if (middleSteps.size() == 1) {
 			List<Integer> origDests = ((SplitMulti) this.currentContext.steps()
@@ -530,9 +533,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			Step nextStep = this.outputContext.steps().get(i);
 			if (nextStep.getStepType() == Step.StepType.SPLITMULTI) {
 				SplitMulti sm = (SplitMulti) nextStep;
-				if (sm.getDests().size() == 1) {
+				if (sm.getDests().size() == 2) {
 					Split newSplit = new Split(sm.getDests().get(0));
-					newSplit.setDest2(this.outputContext.steps().size());
+					newSplit.setDest2(sm.getDests().get(1));
 					this.outputContext.steps().set(i, newSplit);
 				}
 			} else if (nextStep.getStepType() == Step.StepType.JMP) {
@@ -552,7 +555,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			asmContextStack
 					.add(new ContextStackItem(asmCurrentContext, splitMultiStep.getDests().get(i)));
 		}
-		this.outputContext.steps().add(new SplitMulti(splitMultiStep.getDests().get(0)));
+		this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
 		return splitMultiStep.getDests().get(0);
 	}
 
@@ -561,7 +564,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private int visit(Split splitStep) {
 		asmContextOrStack.add(this.outputContext.steps().size());
 		asmContextStack.add(new ContextStackItem(asmCurrentContext, splitStep.getDest2()));
-		this.outputContext.steps().add(new Split(splitStep.getDest1()));
+		this.outputContext.steps().add(new Split(this.outputContext.steps().size() + 1));
 		return splitStep.getDest1();
 	}
 
