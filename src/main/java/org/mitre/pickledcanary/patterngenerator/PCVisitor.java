@@ -3,6 +3,7 @@
 
 package org.mitre.pickledcanary.patterngenerator;
 
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.TreeMap;
 
@@ -35,7 +37,7 @@ import org.mitre.pickledcanary.patterngenerator.output.steps.MaskedByte;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Match;
 import org.mitre.pickledcanary.patterngenerator.output.steps.NegativeLookahead;
 import org.mitre.pickledcanary.patterngenerator.output.steps.OrMultiState;
-import org.mitre.pickledcanary.patterngenerator.output.steps.SetContext;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Context;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Split;
 import org.mitre.pickledcanary.patterngenerator.output.steps.SplitMulti;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Step;
@@ -106,7 +108,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private RegisterValue asmCurrentContext; // current context used for assembling instructions
 	private PatternContext outputContext; // contains the generated pattern steps
 
-	/* Needed to reimplement this class, luckily it's small */
+	// Needed to reimplement this class, luckily it's small
 	static class ContextChanges implements DisassemblerContextAdapter {
 		private final RegisterValue contextIn;
 		private final Map<Address, RegisterValue> contextsOut = new TreeMap<>();
@@ -141,17 +143,15 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		ByteMemBufferImpl buffer = new ByteMemBufferImpl(currentAddress,
 				pats.getInstruction().getVals(), this.language.isBigEndian());
 
-		/*
-		 * Use the language to parse the context changes for each encoding We might be disassembling
-		 * the instruction we just assembled
-		 */
+		// Use the language to parse the context changes for each encoding
+		// We might be disassembling the instruction we just assembled
 		try {
 			language.parse(buffer, contextChanges, false);
 		} catch (InsufficientBytesException | UnknownInstructionException e) {
 			e.printStackTrace();
 		}
 
-		/* A single encoding may change the context at multiple addresses */
+		// A single encoding may change the context at multiple addresses
 		HashMap<Address, RegisterValue> addressCtx = new HashMap<>();
 
 		for (Entry<Address, RegisterValue> ent : contextChanges.contextsOut.entrySet()) {
@@ -430,22 +430,46 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	}
 
 	@Override
-	public Void visitCtx_set(pc_grammar.Ctx_setContext ctx) {
-		visitChildren(ctx);
-		/* Context variable to set later */
-		this.currentContext.steps().add(new SetContext(ctxStack.pop()));
-		return null;
-	}
+	public Void visitContext(pc_grammar.ContextContext ctx) {
+		String context = ctx.getText();
+		// Remove `CONTEXT` at the start
+		context = context.replaceFirst("^ *`CONTEXT`[\r\n]+", "");
+		// Remove "`CONTEXT_END`" at the end
+		context = context.substring(0, context.length() - 9);
+		// Remove any comments
+		context = context.replaceAll("[\n\r]+ *;[^\n\r]*", "");
 
-	@Override
-	public Void visitCtx(pc_grammar.CtxContext ctx) {
-		/*
-		 * Right now, the entire context register is our "context variable" It should be trivial to
-		 * adjust this so that it uses a real context variable instead
-		 */
-		Register ctxReg = language.getContextBaseRegister();
-		ctxStack.push(new RegisterValue(ctxReg,
-				AssemblyPatternBlock.fromString(ctx.getText()).toBigInteger(ctxReg.getNumBytes())));
+		// Get the context variables for this language
+		List<Register> contextVars = currentProgram.getProgramContext().getContextRegisters();
+
+		// Proposed context variable names and values
+		JSONObject proposed = new JSONObject(context);
+
+		// Proposed context variable names
+		var names = proposed.keys();
+
+		// Transient context override step
+		Context contextStep = new Context();
+
+		while (names.hasNext()) {
+			String name = names.next();
+
+			// Check if proposed context variable exists for this language
+			Optional<Register> match = contextVars.stream().filter(reg -> reg.getName().equals(name)).findFirst();
+
+			if (match.isPresent()) {
+				RegisterValue contextVar = new RegisterValue(match.get(), BigInteger.valueOf(proposed.getInt(name)));
+
+				// Context variable value to set later
+				System.err.println("Going to set this context variable: " + contextVar);
+				contextStep.addContextVar(contextVar);
+			}
+			else {
+				throw new QueryParseException("Invalid context variable for language!", ctx);
+			}
+
+		}
+		this.currentContext.steps().add(contextStep);
 		return null;
 	}
 
@@ -486,8 +510,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				case Step.StepType.LOOKUP:
 					visit(i, ((LookupStep) step).copy());
 					break;
-				case Step.StepType.SETCONTEXT:
-					visit((SetContext) step);
+				case Step.StepType.CONTEXT:
+					visit((Context) step);
 					break;
 				default:
 					visit(step);
@@ -572,14 +596,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 	}
 
-	/* Override the current context */
-	private void visit(SetContext setContextStep) {
-		RegisterValue toSet = setContextStep.getContextVar();
-		/*
-		 * asmCurrentContext always contains the full context register We set the specified value
-		 * for the specified context variable in that context register
-		 */
-		asmCurrentContext = asmCurrentContext.assign(toSet.getRegister(), toSet);
+	// Override the current context
+	private void visit(Context contextStep) {
+		for (RegisterValue contextVar: contextStep.getContextVars()) {
+			// asmCurrentContext always contains the full context register
+			// We set the specified value for the specified context variable in that context register
+			asmCurrentContext = asmCurrentContext.assign(contextVar.getRegister(), contextVar);
+		}
 	}
 
 	private void visit(Step step) {
@@ -616,22 +639,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock
 				.fromRegisterValue(asmCurrentContext);
 
+		System.err.println("Context going into assembler: " + assemblerCtx);
 		this.variantCtx = new HashMap<>();
 		this.nextContexts = new HashSet<>();
 
 		for (AssemblyParseResult p : parses) {
 			if (PickledCanary.DEBUG) {
-				/* Print each instruction variant */
+				// Print each instruction variant
 				System.err.println("parse = " + p);
 			}
 
 			AssemblyResolutionResults results;
 
-			/*
-			 * Resolve each instruction variant to get the encodings All variants should use the
-			 * same input context (global context) for resolution Encodings for variants which are
-			 * not valid in the provided context are filtered out by the assembler
-			 */
+			// Resolve each instruction variant to get the encodings
+			// All variants should use the same input context (global context) for resolution
+			// Encodings for variants which are not valid in the provided context are filtered out by the assembler
 			results = assembler.resolveTree(p, currentAddress, assemblerCtx);
 
 			if (monitor.isCancelled()) {
@@ -643,10 +665,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 			for (AssemblyResolution res : results) {
 				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
-					/*
-					 * We must compute the context changes (if any) for every pats, as the
-					 * instruction encodings may affect the global context
-					 */
+					// We must compute the context changes (if any) for every pats
+					// The instruction encodings may affect the global context
 					builder.addAssemblyPattern(pats);
 
 					HashMap<Address, RegisterValue> encodingContextChanges = getContextChanges(pats,

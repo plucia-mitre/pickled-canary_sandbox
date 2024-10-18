@@ -15,7 +15,8 @@ line
     | pc_command
 	| pc_block_command
     | instruction
-	| meta;
+	| meta
+	| context;
 
 pc_command: TICK pc_command_body EXIT_TICK;
 
@@ -24,8 +25,7 @@ pc_command_body
 	| byte_string
 	| masked_byte
 	| any_bytes
-	| label
-	| ctx_set;
+	| label;
 
 byte_match: BYTE_PREFIX byte;
 byte_string: BYTE_STRING;
@@ -35,8 +35,6 @@ masked_byte: MASKED_BYTE_PREFIX byte BYTE_PREFIX byte;
 any_bytes: ANY_BYTES MIXED_NUMBER COMMA_SEPARATOR MIXED_NUMBER (COMMA_SEPARATOR MIXED_NUMBER)? CLOSE_BRACE;
 
 label: LABEL;
-
-ctx_set: CTX_PREFIX ctx;
 
 pc_block_command
 	: or_statement
@@ -60,4 +58,4 @@ instruction: INSTRUCTION;
 
 meta: META;
 
-ctx: CTX;
+context: CONTEXT;

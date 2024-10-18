@@ -20,13 +20,13 @@ INSTRUCTION: ' '* ( '``' | ~('`' | '\r' | '\n' | ' ')) ~('\n' | '\r')+;
 
 META: ' '* '`META`' [\r\n]+ .*? [\r\n]+ ' '* ('`META_END`'|'`END_META`'|'`META`');
 
+CONTEXT: ' '* '`CONTEXT`' [\r\n]+ .*? [\r\n]+ ' '* ('`CONTEXT_END`'|'`END_CONTEXT`');
+
 mode PC_COMMAND_BODY_MODE;
 
 BYTE_PREFIX: '=' -> pushMode(BYTE_MODE);
 
 MASKED_BYTE_PREFIX: '&' -> pushMode(BYTE_MODE);
-
-CTX_PREFIX: '^' -> pushMode(CTX_MODE);
 
 ANY_BYTES: 'ANY_BYTES' ' '* '{' ' '*;
 COMMA_SEPARATOR: ' '* ',' ' '*;
@@ -45,8 +45,4 @@ EXIT_TICK: '`' -> popMode;
 mode BYTE_MODE;
 
 BYTE: '0x' [0-9a-fA-F][0-9a-fA-F]? -> popMode;
-
-mode CTX_MODE;
-// AssemblyPatternBlock string
-CTX: [0-9a-fA-F][0-9a-fA-F](':'[0-9a-fA-F][0-9a-fA-F])* -> popMode;
 
