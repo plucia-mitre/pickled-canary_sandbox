@@ -268,7 +268,7 @@ jobs:
             CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH"
       - uses: actions/upload-artifact@v4
         with:
-          name: python-wheels-${{ matrix.os }}-${{ github.ref_name }}
+          name: python-wheels-${{ matrix.os }}
           path: ./search/wheelhouse/*.whl
 
   # Bundle up a draft release if the version is tagged
@@ -288,7 +288,7 @@ jobs:
       - name: Make zip
         run: |
           cd output_release
-          find . -type d -name 'python-wheels*' -maxdepth 1 -exec zip -r ../\{\}.zip \{\} \;
+          find . -type d -name 'python-wheels*' -maxdepth 1 -exec zip -r ../\{\}-${{ github.ref_name }}.zip \{\} \;
           mkdir ../output_release_coverage
           mv *_coverage_report ../output_release_coverage
           mv pickled_canary_rust_tools_mac_x86_64/treesearchtool pickled_canary_rust_tools/treesearchtool_mac_x86_64
