@@ -1,0 +1,114 @@
+define endian=little;
+
+define space ram type=ram_space size=4 default;
+define space register type=register_space size=4 wordsize=2;
+define space dummy type=ram_space size=4;
+
+define register offset=0x00 size=2 [R1 R2 R3 R4 DUMMY];
+
+# The four byte context register
+define register offset=0x20 size=4 [contextreg];
+
+define token instr(16)
+    opcode = (8,15)
+    operand1 = (4,7)
+    operand2 = (0,3)
+    imm = (0,3)
+;
+
+# The fields for the context register (Context variables).
+define context contextreg
+    off = (28,31) # Branch Offset
+    enc = (24, 27) # Encoding number
+    mov = (20,23) # Index of register whose value was moved
+    set = (16,19) # Mode
+    cfg2 = (12,15) # Config bits
+    cfg1 = (8,11) # Config bits
+    cnt = (4,7) # Counter
+    chr = (0,3) # IO char count
+;
+
+attach variables [operand1 operand2] [R1 R2 R3 R4 _ _ _ _ _ _ _ _ _ _ _ _];
+
+define pcodeop read;
+
+
+# Global context change:
+# New context variable values are set starting at the following address
+:Alloc imm is opcode=0x00 & imm [chr = imm; globalset(inst_next, chr);] {}
+
+# Local context change:
+# Context variables are only changed when operating on this instruction. 
+# Changes are undone after processing instruction, so they should not influence pattern beyond assembly
+:Read operand1 is opcode=0x01 & operand1 [chr = chr + 1;] { operand1 = read();}
+
+# Context changes and non-terminal constructors:
+# Both parent and child constructors change a single context variable
+# The context changes should be applied preorder (Parent first)
+child: imm is imm [cnt = cnt + 1; globalset(inst_next, cnt);] { tmp:2 = imm; export tmp; }
+
+:Load operand1, child is opcode=0x02 & operand1 & child [cnt = 1;] { operand1 = child; }
+
+# Global context changes at multiple addresses:
+# Changes to different context variables are committed starting at distinct addresses
+:Config is opcode=0x03 [cfg1 = 1; globalset(inst_start, cfg1); cfg2 = 1; globalset(inst_next, cfg2);] {}
+
+# Global context change from branch:
+# New context variable values are set starting at the address of the branch
+# This may pose challenges for keeping track of context changes during pattern compilation
+dest: reloc is imm [reloc=imm + inst_next;] { export *[ram]:4 reloc; }
+
+:BranchS dest is opcode=0x04 & dest [set = 1; globalset(dest, set);] { goto dest; }
+
+:BranchU dest is opcode=0x05 & dest [set = 0; globalset(dest, set);] { goto dest; }
+
+# Global context change based on encoding:
+# Second operand is used to compute the global context change, but when it's wildcarded we don't know the value
+# This causes problems when computing global context changes at pattern compile time
+:Mov operand1, operand2 is opcode=0x06 & operand1 & operand2 [mov = operand2; globalset(inst_next, mov);] { operand1 = operand2; }
+
+# Ambiguous global context change with two encodings:
+# Two different encodings derived from the same instruction string produce different context variable values
+:Not operand1 is opcode=0x07 & operand1 [enc = 0; globalset(inst_next, enc);] { operand1 = ~operand1; }
+
+:Not operand2 is opcode=0x08 & operand2 [enc = 1; globalset(inst_next, enc);] { operand2 = ~operand2; }
+
+# Ambiguous global context change with three encodings:
+# Three different encodings derived from the same instruction string produce different context variable values
+:And operand1, operand2 is opcode=0x09 & operand1 & operand2 [enc = 0; globalset(inst_next, enc);] { operand1 = operand1 & operand2; }
+
+:And operand2, operand1 is opcode=0x0A & operand2 & operand1 [enc = 1; globalset(inst_next, enc);] { operand2 = operand2 & operand1; }
+
+:And operand1, operand2 is opcode=0x0B & operand1 & operand2  [enc = 2; globalset(inst_next, enc);] { local tmp = operand2 & operand1; operand1 = ~tmp;}
+
+# Ambiguous global context change from wildcard:
+# When the second operand of an Add instruction string is wildcarded, the global context change is ambiguous
+# We must fork the pattern in this case
+:Add operand1, operand2 is opcode=0x0C & operand1 & operand2 [set = 0; globalset(inst_next, set);] { operand1 = operand1 + operand2; }
+
+:Add operand1, imm is opcode=0x0D & operand1 & imm [set = 1; globalset(inst_next, set);] { operand1 = operand1 + imm; }
+
+# Context-based branch:
+# If the immediate operand is wildcarded, we have to compute the context-based expression at search time
+destC: reloc is imm [off = 1; reloc=imm + off + inst_next;] { export *[ram]:4 reloc; }
+
+:BranchC destC is opcode=0x0E & destC { goto destC; }
+
+# Context validity:
+# The first instruction is only valid in one context, and the second instruction is only valid in another
+# Each instructions assigns the context variable opposing values
+:Set is opcode=0x0F & set=0 [set = 1; globalset(inst_next, set);] {}
+
+:Unset is opcode=0x10 & set=1 [set = 0; globalset(inst_next, set);] {}
+
+# Ambiguous context validity:
+# Each encoding of the Shift instruction is only valid in a specific context
+# No information in the instruction string indicates which encoding it will resolve to
+:Shift operand1, operand2 is opcode=0x11 & operand1 & operand2 & set=0 { operand1 = operand1 << operand2; }
+
+:Shift operand1, operand2 is opcode=0x12 & operand1 & operand2 & set=1 { operand1 = operand1 >> operand2; }
+
+
+
+
+
