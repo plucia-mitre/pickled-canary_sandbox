@@ -232,11 +232,11 @@ public class ScalarOperandMeta extends OperandMeta {
 
 		return out;
 	}
-	
+
 	public boolean hasContext() {
 		return walkExpression(this.expression);
 	}
-	
+
 	// Detect if at least one ContextField exists in expression 
 	// TODO: Is there a decent way to make this logic reusable?
 	// It's very similar to expressionToJson()

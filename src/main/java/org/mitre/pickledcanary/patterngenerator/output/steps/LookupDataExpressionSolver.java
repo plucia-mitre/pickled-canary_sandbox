@@ -99,11 +99,7 @@ public class LookupDataExpressionSolver {
 	}
 	
 	/**
-	 * Get size bytes at offset into input and return as a long.
-	 * <p>
-	 * Bad things will happen if size is more bytes than can be held in a long and
-	 * the memory being read from those bytes has a non-zero value.
-	 * <p>
+	 * Retrieve bytes from entire context register as an int.
 	 * Compare with "getContextBytes" in ghidra.app.plugin.processors.sleigh
 	 */
 	private static int getContextBytes(int[] context, int bytestart, int bytesize) {

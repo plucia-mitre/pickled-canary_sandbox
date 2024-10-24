@@ -67,11 +67,10 @@ public class LookupStep extends StepBranchless {
 	public int[] getContext() {
 		return this.context;
 	}
-	
+
 	public void putContext(int[] context) {
 		this.context = context;
 	}
-	
 
 	/**
 	 * Replace temporary table key with the actual table key.
@@ -93,11 +92,11 @@ public class LookupStep extends StepBranchless {
 
 		JSONObject out = super.getJson();
 		out.put("data", arr);
-		
+
 		if (context != null) {
 			out.put("context", contextToJson(context));
 		}
-		
+
 		return out;
 	}
 
@@ -145,11 +144,11 @@ public class LookupStep extends StepBranchless {
 	
 	private List<Long> contextToJson(int[] input) {
 	    List<Long> out = new ArrayList<>(input.length);
-	    
+
 	    for (int chunk : input) {
 		    // Sigh
 		    out.add(java.lang.Integer.toUnsignedLong(chunk));
 	    }
 	    return out;
-    }
+	}
 }

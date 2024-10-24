@@ -231,7 +231,7 @@ public class MipsBePickledCanaryTest extends PickledCanaryTest {
 	public void testRestore() {
 		String testQueryPatternExpected = "{\"tables\":[" + tablesForRestorePattern + "],\"steps\":["
 				+ stepsForRestorePattern + "]";
-        
+
 		generatePatternTestHelper(restorePattern,
 				testQueryPatternExpected + getCompileInfo(this.program.getMinAddress().add(8)),
 				this.program.getMinAddress().add(8));

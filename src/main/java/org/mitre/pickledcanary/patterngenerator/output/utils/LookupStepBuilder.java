@@ -102,7 +102,7 @@ public class LookupStepBuilder {
 			if (assemblyOperandData.choice() == null) {
 				ot = new ScalarOperandMeta(wildcardMask, assemblyOperandData.wildcard(),
 						assemblyOperandData.expression());
-				
+
 				// Only add the input context when required
 				if (lookupStep.getContext() == null && ((ScalarOperandMeta) ot).hasContext()) {
 					System.err.println("Adding the context!!!");
@@ -141,15 +141,15 @@ public class LookupStepBuilder {
 	};
 	
 	// Convert the context from the pattern into form expected by the solver
-	public int[] convertContext(RegisterValue context) {
+	private int[] convertContext(RegisterValue context) {
 		// TODO: Slight hack
 		// Just using ContextCache for conversion from RegisterValue -> int[]
 		ContextCache temp = new ContextCache();
 		temp.registerVariable(context.getRegister());
-		
+
 		int[] convert = new int[temp.getContextSize()];
 		temp.getContext(new SearchContext(context), convert);
-		
+
 		return convert;
 	}
 
