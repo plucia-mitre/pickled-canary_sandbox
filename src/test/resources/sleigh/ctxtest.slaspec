@@ -7,7 +7,7 @@ define space dummy type=ram_space size=4;
 define register offset=0x00 size=2 [R1 R2 R3 R4 DUMMY];
 
 # The four byte context register
-define register offset=0x20 size=4 [contextreg];
+define register offset=0x40 size=4 [contextreg];
 
 define token instr(16)
     opcode = (8,15)
@@ -107,8 +107,3 @@ destC: reloc is imm [off = 1; reloc=imm + off + inst_next;] { export *[ram]:4 re
 :Shift operand1, operand2 is opcode=0x11 & operand1 & operand2 & set=0 { operand1 = operand1 << operand2; }
 
 :Shift operand1, operand2 is opcode=0x12 & operand1 & operand2 & set=1 { operand1 = operand1 >> operand2; }
-
-
-
-
-

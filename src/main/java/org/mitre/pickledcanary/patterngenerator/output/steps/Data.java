@@ -26,7 +26,7 @@ public interface Data extends JsonSerializable {
 	 * <p>
 	 * There's a good chance you want to use doLookupAndCheck instead of this method
 	 */
-	public LookupResults doLookup(MemBuffer input, int sp, List<LookupTable> tables);
+	public LookupResults doLookup(MemBuffer input, int[] context, int sp, List<LookupTable> tables);
 
 	/**
 	 * Given results from a doLookup, see if they conflict with the given existing SavedData.
@@ -43,6 +43,6 @@ public interface Data extends JsonSerializable {
 	/**
 	 * Do both a doLookup and a doCheck (see their descriptions for more info)
 	 */
-	public LookupAndCheckResult doLookupAndCheck(MemBuffer input, int sp, List<LookupTable> tables,
+	public LookupAndCheckResult doLookupAndCheck(MemBuffer input, int[] context, int sp, List<LookupTable> tables,
 			SavedData existing);
 }

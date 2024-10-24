@@ -667,7 +667,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
 					// We must compute the context changes (if any) for every pats
 					// The instruction encodings may affect the global context
-					builder.addAssemblyPattern(pats);
+					builder.addAssemblyPattern(pats, asmCurrentContext);
 
 					HashMap<Address, RegisterValue> encodingContextChanges = getContextChanges(pats,
 							asmCurrentContext);
