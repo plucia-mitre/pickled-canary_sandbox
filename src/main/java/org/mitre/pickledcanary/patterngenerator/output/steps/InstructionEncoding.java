@@ -15,6 +15,7 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 
 	private final ByteArrayWrapper value; // value of encoding after applying opcode mask
 	private final List<OperandMeta> operands; // list of operands
+	private int[] context = null; // Local context (when required)
 
 	public InstructionEncoding(byte[] value) {
 		this.value = new ByteArrayWrapper(value);
@@ -23,6 +24,10 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 
 	public void addOperand(OperandMeta ot) {
 		operands.add(ot);
+	}
+
+	public void addContext(int[] context) {
+		this.context = context;
 	}
 
 	/**
@@ -69,6 +74,21 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 		JSONObject out = new JSONObject();
 		out.put("value", value);
 		out.put("operands", operandArr);
+
+		if (context != null) {
+			out.put("context", contextToJson(context));
+		}
+
+		return out;
+	}
+
+	private List<Long> contextToJson(int[] input) {
+		List<Long> out = new ArrayList<>(input.length);
+
+		for (int chunk : input) {
+			// Sigh
+			out.add(java.lang.Integer.toUnsignedLong(chunk));
+		}
 		return out;
 	}
 
@@ -78,6 +98,10 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 
 	public List<OperandMeta> getOperands() {
 		return this.operands;
+	}
+
+	public int[] getContext() {
+		return this.context;
 	}
 
 	public String toString() {

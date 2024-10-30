@@ -51,6 +51,7 @@ import ghidra.app.plugin.assembler.sleigh.sem.AssemblyPatternBlock;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolution;
 import ghidra.app.plugin.assembler.sleigh.sem.AssemblyResolutionResults;
 import ghidra.app.plugin.assembler.sleigh.sem.DefaultAssemblyResolvedPatterns;
+import ghidra.app.plugin.processors.sleigh.SleighInstructionPrototype;
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
 import ghidra.asm.wild.WildSleighAssembler;
 import ghidra.asm.wild.WildSleighAssemblerBuilder;
@@ -64,6 +65,7 @@ import ghidra.program.model.lang.UnknownInstructionException;
 import ghidra.program.model.listing.Program;
 import ghidra.program.model.listing.ProgramContext;
 import ghidra.program.model.mem.ByteMemBufferImpl;
+import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.util.task.TaskMonitor;
 
 /**
@@ -109,11 +111,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private PatternContext outputContext; // contains the generated pattern steps
 
 	// Needed to reimplement this class, luckily it's small
-	static class ContextChanges implements DisassemblerContextAdapter {
+	static class ContextAdapter implements DisassemblerContextAdapter {
 		private final RegisterValue contextIn;
 		private final Map<Address, RegisterValue> contextsOut = new TreeMap<>();
 
-		public ContextChanges(RegisterValue contextIn) {
+		public ContextAdapter(RegisterValue contextIn) {
 			this.contextIn = contextIn;
 		}
 
@@ -136,28 +138,34 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			contextsOut.put(after, progCtx.getFlowValue(contextIn));
 		}
 	}
+	
+	private record ContextChanges(RegisterValue localCtx, HashMap<Address, RegisterValue> globalCtx) {};
 
-	public HashMap<Address, RegisterValue> getContextChanges(DefaultAssemblyResolvedPatterns pats,
+	public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
 			RegisterValue inputCtx) {
-		ContextChanges contextChanges = new ContextChanges(inputCtx);
+		ContextAdapter contextAdapter = new ContextAdapter(inputCtx);
 		ByteMemBufferImpl buffer = new ByteMemBufferImpl(currentAddress,
 				pats.getInstruction().getVals(), this.language.isBigEndian());
 
+		RegisterValue localCtx = null;
 		// Use the language to parse the context changes for each encoding
 		// We might be disassembling the instruction we just assembled
 		try {
-			language.parse(buffer, contextChanges, false);
-		} catch (InsufficientBytesException | UnknownInstructionException e) {
+			SleighInstructionPrototype proto = (SleighInstructionPrototype) language.parse(buffer, contextAdapter, false);
+			// Get the local context changes from the prototype
+			// While we retrieve this for every encoding, we don't always need it
+			localCtx = proto.getParserContext(buffer, contextAdapter).getContextRegisterValue();
+		} catch (InsufficientBytesException | UnknownInstructionException | MemoryAccessException e) {
 			e.printStackTrace();
 		}
 
-		// A single encoding may change the context at multiple addresses
-		HashMap<Address, RegisterValue> addressCtx = new HashMap<>();
+		// A single encoding may change the global context at multiple addresses
+		HashMap<Address, RegisterValue> globalCtx = new HashMap<>();
 
-		for (Entry<Address, RegisterValue> ent : contextChanges.contextsOut.entrySet()) {
-			addressCtx.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
+		for (Entry<Address, RegisterValue> ent : contextAdapter.contextsOut.entrySet()) {
+			globalCtx.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
 		}
-		return addressCtx;
+		return new ContextChanges(localCtx, globalCtx);
 	}
 
 	private void printContextChanges(
@@ -667,10 +675,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
 					// We must compute the context changes (if any) for every pats
 					// The instruction encodings may affect the global context
-					builder.addAssemblyPattern(pats, asmCurrentContext);
+					ContextChanges contextChanges = getContextChanges(pats, asmCurrentContext);
+					System.err.println("Printing local context: " + contextChanges.localCtx());
 
-					HashMap<Address, RegisterValue> encodingContextChanges = getContextChanges(pats,
-							asmCurrentContext);
+					builder.addAssemblyPattern(pats, contextChanges.localCtx());
+
+					HashMap<Address, RegisterValue> encodingContextChanges = contextChanges.globalCtx();
 
 					encodingCtx.put(pats, encodingContextChanges);
 

@@ -22,7 +22,6 @@ public class LookupStep extends StepBranchless {
 	private final int lineNumber;
 	private final int charPosition;
 	private final HashMap<List<Integer>, Data> data; // map from opcode mask to data
-	private int[] context = null;
 
 	public LookupStep(String instructionText, int lineNumber, int charPosition) {
 		super(StepType.LOOKUP, null);
@@ -64,14 +63,6 @@ public class LookupStep extends StepBranchless {
 		data.put(mask, d);
 	}
 
-	public int[] getContext() {
-		return this.context;
-	}
-
-	public void putContext(int[] context) {
-		this.context = context;
-	}
-
 	/**
 	 * Replace temporary table key with the actual table key.
 	 *
@@ -92,11 +83,6 @@ public class LookupStep extends StepBranchless {
 
 		JSONObject out = super.getJson();
 		out.put("data", arr);
-
-		if (context != null) {
-			out.put("context", contextToJson(context));
-		}
-
 		return out;
 	}
 
@@ -120,7 +106,7 @@ public class LookupStep extends StepBranchless {
 		List<LookupAndCheckResult> out = new ArrayList<>(this.data.size());
 
 		for (Data d : this.getAllData()) {
-			LookupAndCheckResult result = d.doLookupAndCheck(input, context, sp, tables, existing);
+			LookupAndCheckResult result = d.doLookupAndCheck(input, sp, tables, existing);
 			if (result != null) {
 				out.add(result);
 			}
@@ -140,15 +126,5 @@ public class LookupStep extends StepBranchless {
 
 	public LookupStep copy() {
 		return new LookupStep(instructionText, lineNumber, charPosition, note);
-	}
-	
-	private List<Long> contextToJson(int[] input) {
-	    List<Long> out = new ArrayList<>(input.length);
-
-	    for (int chunk : input) {
-		    // Sigh
-		    out.add(java.lang.Integer.toUnsignedLong(chunk));
-	    }
-	    return out;
 	}
 }

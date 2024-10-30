@@ -67,7 +67,7 @@ public record LookupData(
 		return out;
 	}
 
-	public LookupResults doLookup(MemBuffer input, int[] context, int sp, List<LookupTable> tables) {
+	public LookupResults doLookup(MemBuffer input, int sp, List<LookupTable> tables) {
 		byte[] data = new byte[this.mask.length];
 
 		if (input.getBytes(data, sp) < this.mask.length) {
@@ -107,7 +107,7 @@ public record LookupData(
 							// to be a computed expression resulting in an
 							// address (represented as an SP value)
 							long x = LookupDataExpressionSolver.computeExpression(
-								oo.getExpression(), input, context, sp,
+								oo.getExpression(), input, ie.getContext(), sp,
 								this.mask.length);
 							out = new ConcreteOperandAddress(oo.varId.substring(1), x);
 						}
@@ -138,9 +138,9 @@ public record LookupData(
 		return localSaved;
 	}
 
-	public LookupAndCheckResult doLookupAndCheck(MemBuffer input, int[] context, int sp, List<LookupTable> tables,
+	public LookupAndCheckResult doLookupAndCheck(MemBuffer input, int sp, List<LookupTable> tables,
 			SavedData existing) {
-		LookupResults result = this.doLookup(input, context, sp, tables);
+		LookupResults result = this.doLookup(input, sp, tables);
 		if (result != null) {
 			SavedData newSaved = this.doCheck(result, existing);
 			if (newSaved != null) {

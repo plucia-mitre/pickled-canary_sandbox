@@ -102,12 +102,6 @@ public class LookupStepBuilder {
 			if (assemblyOperandData.choice() == null) {
 				ot = new ScalarOperandMeta(wildcardMask, assemblyOperandData.wildcard(),
 						assemblyOperandData.expression());
-
-				// Only add the input context when required
-				if (lookupStep.getContext() == null && ((ScalarOperandMeta) ot).hasContext()) {
-					System.err.println("Adding the context!!!");
-					lookupStep.putContext(convertContext(context));
-				}
 			}
 			else {
 				ot = new FieldOperandMeta(wildcardMask, tableKey,
@@ -119,6 +113,15 @@ public class LookupStepBuilder {
 				if (!ie.matches(ot)) {
 					ie.addOperand(ot);
 				}
+
+				// Only add the input context when required
+				// TODO: Any scenario where condensing encodings affects local context association?
+				if (ot instanceof ScalarOperandMeta sm) {
+					if (sm.hasContext() && ie.getContext() == null) {
+						System.err.println("Adding the context!!!");
+						ie.addContext(convertContext(context));
+					}
+				}
 			}
 		}
 
@@ -127,10 +130,10 @@ public class LookupStepBuilder {
 	
 	// Class to help convert context into form expected by the solver
 	// Beats having to reimplement a ton of functions
-	static class SearchContext implements DisassemblerContextAdapter {
+	static class ContextAdapter implements DisassemblerContextAdapter {
 		private final RegisterValue context;
 
-		public SearchContext(RegisterValue context) {
+		public ContextAdapter(RegisterValue context) {
 			this.context = context;
 		}
 
@@ -148,7 +151,7 @@ public class LookupStepBuilder {
 		temp.registerVariable(context.getRegister());
 
 		int[] convert = new int[temp.getContextSize()];
-		temp.getContext(new SearchContext(context), convert);
+		temp.getContext(new ContextAdapter(context), convert);
 
 		return convert;
 	}
