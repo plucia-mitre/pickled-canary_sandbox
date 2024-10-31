@@ -40,9 +40,9 @@ define pcodeop read;
 # Local context change:
 # Context variables are only changed when operating on this instruction. 
 # Changes are undone after processing instruction, so they should not influence pattern beyond assembly
-:Read operand1 is opcode=0x01 & operand1 [chr = chr + 1;] { operand1 = read();}
+:Read operand1 is opcode=0x01 & operand1 [chr = chr + 1;] { operand1 = read(); }
 
-# Context changes and non-terminal constructors:
+# Context changes and non-terminal constructor:
 # Both parent and child constructors change a single context variable
 # The context changes should be applied preorder (Parent first)
 child: imm is imm [cnt = cnt + 1; globalset(inst_next, cnt);] { tmp:2 = imm; export tmp; }
@@ -79,7 +79,7 @@ dest: reloc is imm [reloc=imm + inst_next;] { export *[ram]:4 reloc; }
 
 :And operand2, operand1 is opcode=0x0A & operand2 & operand1 [enc = 1; globalset(inst_next, enc);] { operand2 = operand2 & operand1; }
 
-:And operand1, operand2 is opcode=0x0B & operand1 & operand2  [enc = 2; globalset(inst_next, enc);] { local tmp = operand2 & operand1; operand1 = ~tmp;}
+:And operand1, operand2 is opcode=0x0B & operand1 & operand2 [enc = 2; globalset(inst_next, enc);] { local tmp = operand2 & operand1; operand1 = ~tmp;}
 
 # Ambiguous global context change from wildcard:
 # When the second operand of an Add instruction string is wildcarded, the global context change is ambiguous
