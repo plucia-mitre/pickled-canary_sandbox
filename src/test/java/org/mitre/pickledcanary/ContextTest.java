@@ -28,13 +28,14 @@ public class ContextTest extends PickledCanaryTest {
 	private static final String stepsForAmbiguousContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextBasedBranchPattern = 
-			"BranchC `Q1`\r\n"
-			+ "`ANY_BYTES{2,2}`\r\n"
+			"BranchC `:Q1`\r\n"
+			+ "`ANY_BYTES{0,4}`\r\n"
+			+ "`Q1:`\r\n"
 			+ "Add R1, R1";
 
 	private static final String tablesForContextBasedBranchPattern = "";
 
-	private static final String stepsForContextBasedBranchPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}}},\"right\":{\"op\":\"ContextField\",\"value\":{\"bitend\":31,\"shift\":0,\"signbit\":false,\"bitstart\":28,\"byteend\":3,\"bytestart\":3}}}},\"right\":{\"op\":\"EndInstructionValue\"}}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"context\":[1],\"value\":[0,14]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 2 End: 2 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{2,2}`\",\"min\":2,\"max\":2,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
+	private static final String stepsForContextBasedBranchPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}}},\"right\":{\"op\":\"ContextField\",\"value\":{\"bitend\":31,\"shift\":0,\"signbit\":false,\"bitstart\":28,\"byteend\":3,\"bytestart\":3}}}},\"right\":{\"op\":\"EndInstructionValue\"}}},\"var_id\":\":Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"context\":[1],\"value\":[0,14]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 0 End: 4 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{0,4}`\",\"min\":0,\"max\":4,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"type\":\"LABEL\",\"value\":\"Q1\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextValidityPattern = 
 			"Set\r\n"
