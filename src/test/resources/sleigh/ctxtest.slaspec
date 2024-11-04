@@ -1,4 +1,5 @@
 define endian=little;
+define alignment=2;
 
 define space ram type=ram_space size=4 default;
 define space register type=register_space size=4 wordsize=2;
@@ -14,6 +15,7 @@ define token instr(16)
     operand1 = (4,7)
     operand2 = (0,3)
     imm = (0,3)
+    simm = (0,3) signed
 ;
 
 # The fields for the context register (Context variables).
@@ -56,7 +58,7 @@ child: imm is imm [cnt = cnt + 1; globalset(inst_next, cnt);] { tmp:2 = imm; exp
 # Global context change from branch:
 # New context variable values are set starting at the address of the branch
 # This may pose challenges for keeping track of context changes during pattern compilation
-dest: reloc is imm [reloc=imm + inst_next;] { export *[ram]:4 reloc; }
+dest: reloc is simm [reloc = (simm * 2) + inst_next;] { export *[ram]:4 reloc; }
 
 :BranchS dest is opcode=0x04 & dest [set = 1; globalset(dest, set);] { goto dest; }
 
@@ -90,7 +92,7 @@ dest: reloc is imm [reloc=imm + inst_next;] { export *[ram]:4 reloc; }
 
 # Context-based branch:
 # If the immediate operand is wildcarded, we have to compute the context-based expression at search time
-destC: reloc is imm [off = 1; reloc=imm + off + inst_next;] { export *[ram]:4 reloc; }
+destC: reloc is simm [off = 2; reloc = (simm * 2) + off + inst_next;] { export *[ram]:4 reloc; }
 
 :BranchC destC is opcode=0x0E & destC { goto destC; }
 
