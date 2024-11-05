@@ -3,6 +3,8 @@
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
+import java.util.Objects;
+
 import org.json.JSONObject;
 
 public class MaskedByte extends StepBranchless {
@@ -44,5 +46,25 @@ public class MaskedByte extends StepBranchless {
 		out.put("mask", this.mask);
 		out.put("value", this.value);
 		return out;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		MaskedByte other = (MaskedByte) o;
+		// field comparison
+		return Objects.equals(this.stepType, other.stepType) && this.mask == other.mask &&
+			this.value == other.mask;
 	}
 }

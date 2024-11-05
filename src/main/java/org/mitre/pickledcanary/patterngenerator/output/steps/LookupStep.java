@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -100,5 +101,24 @@ public class LookupStep extends StepBranchless {
 
 	public boolean isEmpty() {
 		return this.data.isEmpty();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		LookupStep other = (LookupStep) o;
+		// field comparison
+		return Objects.equals(this.stepType, other.stepType) && this.data.equals(other.data);
 	}
 }
