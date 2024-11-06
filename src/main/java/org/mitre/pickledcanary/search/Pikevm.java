@@ -68,7 +68,9 @@ public class Pikevm {
 	 * @throws MemoryAccessException
 	 */
 	public SavedData run() {
+		long startingMonitorValue = this.monitor.getProgress();
 		int sp = 0;
+		
 		if (!this.doDotStar) {
 			this.addThread(sp, 0, new SavedData());
 		}
@@ -77,6 +79,10 @@ public class Pikevm {
 			PikevmThread curPikevmThread = null;
 			if (sp % 256 == 0 && this.monitor.isCancelled()) {
 				return null;
+			}
+			
+			if (sp % 0x1000 == 0) {
+				monitor.setProgress(startingMonitorValue + sp);
 			}
 			
 			if (this.doDotStar) {

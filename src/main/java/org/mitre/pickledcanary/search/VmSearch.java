@@ -100,16 +100,21 @@ public class VmSearch {
 		int totalRanges = this.memory.getNumAddressRanges();
 		int currentRangeNumber = 1;
 		monitor.setIndeterminate(false);
+		
+		long totalSizeToSearch = 0;
+		for (AddressRange range: this.memory.getAddressRanges()) {
+			totalSizeToSearch += range.getLength();
+		}
 
+		monitor.setIndeterminate(false);
+		monitor.setProgress(0);
+		monitor.setMaximum(totalSizeToSearch);
+		long totalSearched = 0;
 		for (AddressRange range : this.memory.getAddressRanges()) {
 
-			Address rangeStart = range.getMinAddress();
-			monitor.setProgress(0);
 			monitor.setMessage("Searching memory range " + currentRangeNumber + " of " + totalRanges);
 
 			Address start = range.getMinAddress();
-			Address end = range.getMaxAddress();
-			monitor.setMaximum(end.subtract(start));
 
 			while (true) {
 
@@ -119,13 +124,15 @@ public class VmSearch {
 					break;
 				}
 				accumulator.add(rangeOut);
+				
+				totalSearched += rangeOut.getStart().subtract(start);
+				monitor.setProgress(totalSearched);
 
 				start = rangeOut.getStart().next();
 				if (start == null) {
 					break;
 				}
-
-				monitor.setProgress(start.subtract(rangeStart));
+ 
 				monitor.setMessage("Searching memory range " + currentRangeNumber + " of " + totalRanges);
 				if (monitor.isCancelled()) {
 					return;

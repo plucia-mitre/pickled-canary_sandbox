@@ -85,6 +85,8 @@ public class PickledCanarySearcher {
 		// Set our message to say that we're compiling... and tell everyone who cares
 		this.compiledPattern = PickledCanarySearcher.COMPILING_PATTERN;
 		this.notifyListeners();
+		
+		monitor.setMessage(PickledCanarySearcher.COMPILING_PATTERN);
 
 		Instant start = Instant.now();
 
