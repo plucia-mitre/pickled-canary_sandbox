@@ -35,12 +35,30 @@ public class Pikevm {
 	protected final Pattern pattern;
 	protected final MemBuffer input;
 	protected final TaskMonitor monitor;
+	protected final boolean doDotStar;
 
 	public Pikevm(Pattern pattern, MemBuffer input, TaskMonitor monitor) {
 		this.states = new PikevmStates();
 		this.pattern = pattern;
 		this.input = input;
 		this.monitor = monitor;
+
+		this.doDotStar = this.startsWithDotStar();
+	}
+	
+	private boolean startsWithDotStar() {
+		boolean startsWithDotStar = true;
+		Pattern dotStar = Pattern.getDotStar().append(Pattern.getSaveStart());
+		int dotStartSize = dotStar.steps.size();
+		if (pattern.steps.size() >= dotStartSize+1) {
+			for (int i = 0; i < dotStartSize; i++) {
+				if (!pattern.steps.get(i).equals(dotStar.steps.get(i))) {
+					startsWithDotStar = false;
+					break;
+				}
+			}
+		}
+		return startsWithDotStar;
 	}
 
 	/**
@@ -51,13 +69,20 @@ public class Pikevm {
 	 */
 	public SavedData run() {
 		int sp = 0;
-		this.addThread(sp, 0, new SavedData());
-
+		if (!this.doDotStar) {
+			this.addThread(sp, 0, new SavedData());
+		}
 		// This will throw an exception when it reaches the end
 		while (true) {
-
+			PikevmThread curPikevmThread = null;
 			if (sp % 256 == 0 && this.monitor.isCancelled()) {
 				return null;
+			}
+			
+			if (this.doDotStar) {
+				SavedData s = new SavedData();
+				s.start = sp;
+				curPikevmThread = new PikevmThread(4, s);
 			}
 
 			// bail when we've reached one past the end of our readable bytes.
@@ -71,7 +96,9 @@ public class Pikevm {
 			}
 
 			while (true) {
-				PikevmThread curPikevmThread = this.states.getNextThread(sp);
+				if (curPikevmThread == null) {
+					curPikevmThread = this.states.getNextThread(sp);
+				}
 				if (curPikevmThread == null) {
 					break;
 				}
@@ -80,12 +107,15 @@ public class Pikevm {
 				try {
 					result = this.processThread(sp, curPikevmThread);
 				} catch (MemoryAccessException e) {
+					curPikevmThread = null;
 					continue;
 				}
 				if (result != null) {
 					return result;
 				}
+				curPikevmThread = null;
 			}
+			curPikevmThread = null;
 			sp += 1;
 		}
 		return null;
@@ -165,6 +195,14 @@ public class Pikevm {
 		} else if (curStep instanceof Match) {
 			saved.end = sp;
 			return saved;
+		}
+		else if (curStep instanceof Jmp || curStep instanceof Split ||
+			curStep instanceof SplitMulti || curStep instanceof SaveStart ||
+			curStep instanceof Label) {
+			// We should only hit this case on the FIRST step of a pattern (all others should be
+			// handled by recursive calls in addThread)
+			this.addThread(sp, pc, saved);
+			return null;
 		}
 		throw new UnsupportedOperationException("Shouldn't Get here! Is there an other opcode which needs to be implemented?");
 	}

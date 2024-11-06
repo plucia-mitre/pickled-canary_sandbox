@@ -18,7 +18,7 @@ public class PikevmStates {
 	private int startIdx;
 
 	public PikevmStates() {
-		this.inner = new ArrayList<>();
+		this.inner = new ArrayList<>(100);
 		this.startIdx = 0;
 	}
 
@@ -43,6 +43,8 @@ public class PikevmStates {
 	public PikevmThread getNextThread(int sp) {
 		int spIndex = sp - this.startIdx;
 		if (spIndex >= this.inner.size()) {
+			this.inner.clear();
+			this.startIdx = sp;
 			return null;
 		}
 		
@@ -55,7 +57,4 @@ public class PikevmStates {
 		
 		return out;
 	}
-
-	// TODO: implement cleanup of old lists (e.g. remove them and increment
-	// start_idx)
 }

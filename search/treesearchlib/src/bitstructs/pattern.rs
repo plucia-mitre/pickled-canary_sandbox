@@ -296,7 +296,7 @@ impl<Endian: BitOrder + Clone> Pattern<Endian> {
     /// non-consuming opcodes)
     ///
     /// # Arguments
-    /// * `step` - The step to check if it's a valid possible optimiation
+    /// * `step` - The step to check if it's a valid possible optimization
     ///   location.
     /// * `visited` - List of steps which have been evaluated so far. Should be
     ///   an empty vec on initial call. If we encounter the same step more than
@@ -322,7 +322,7 @@ impl<Endian: BitOrder + Clone> Pattern<Endian> {
         }
         visited.push(step);
 
-        // Keep a list of children of this step which are themslves optimizable.
+        // Keep a list of children of this step which are themselves optimizable.
         // We'll later possibly remove these from being considered optimization
         // points (because it's better to optimize the parent rather than the
         // children)
