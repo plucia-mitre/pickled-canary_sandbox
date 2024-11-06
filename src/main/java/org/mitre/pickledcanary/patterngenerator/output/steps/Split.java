@@ -69,6 +69,11 @@ public class Split extends Step {
 	}
 
 	@Override
+	public String toString() {
+		return "SPLIT Dest1: " + this.dest1 + "; Dest2: " + this.dest2;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

@@ -15,6 +15,7 @@ public class AnyByte extends StepBranchless {
 		super(StepType.ANYBYTE, note);
 	}
 
+	@Override
 	public String toString() {
 		return "AnyByte";
 	}

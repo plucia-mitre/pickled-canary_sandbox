@@ -16,6 +16,11 @@ public class Match extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "MATCH";
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

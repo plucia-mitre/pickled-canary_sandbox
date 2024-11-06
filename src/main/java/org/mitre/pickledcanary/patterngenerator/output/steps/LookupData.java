@@ -107,7 +107,7 @@ public record LookupData(
 							// to be a computed expression resulting in an
 							// address (represented as an SP value)
 							long x = LookupDataExpressionSolver.computeExpression(
-								oo.getExpression(), input, sp,
+								oo.getExpression(), input, ie.getContext(), sp,
 								this.mask.length);
 							out = new ConcreteOperandAddress(oo.varId.substring(1), x);
 						}

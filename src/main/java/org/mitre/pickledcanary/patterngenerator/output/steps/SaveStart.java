@@ -16,6 +16,11 @@ public class SaveStart extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "SAVE START";
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

@@ -19,16 +19,37 @@ import ghidra.program.model.mem.MemBuffer;
 
 public class LookupStep extends StepBranchless {
 
+	private final String instructionText;
+	private final int lineNumber;
+	private final int charPosition;
 	private final HashMap<List<Integer>, Data> data; // map from opcode mask to data
 
-	public LookupStep() {
+	public LookupStep(String instructionText, int lineNumber, int charPosition) {
 		super(StepType.LOOKUP, null);
+		this.instructionText = instructionText;
+		this.lineNumber = lineNumber;
+		this.charPosition = charPosition;
 		this.data = new HashMap<>();
 	}
 
-	public LookupStep(String note) {
+	public LookupStep(String instructionText, int lineNumber, int charPosition, String note) {
 		super(StepType.LOOKUP, note);
+		this.instructionText = instructionText;
+		this.lineNumber = lineNumber;
+		this.charPosition = charPosition;
 		this.data = new HashMap<>();
+	}
+
+	public String getInstructionText() {
+		return instructionText;
+	}
+
+	public int getLineNumber() {
+		return lineNumber;
+	}
+
+	public int getCharPosition() {
+		return charPosition;
 	}
 
 	public boolean hasMask(List<Integer> mask) {
@@ -45,7 +66,7 @@ public class LookupStep extends StepBranchless {
 
 	/**
 	 * Replace temporary table key with the actual table key.
-	 * 
+	 *
 	 * @param tables
 	 */
 	public void resolveTableIds(AllLookupTables tables) {
@@ -72,13 +93,12 @@ public class LookupStep extends StepBranchless {
 
 	/**
 	 * Loop over all our internal data doing a lookup on each and return the combined results
-	 * 
+	 *
 	 * @param input
 	 * @param sp
 	 * @param tables
-	 * @param existing
-	 *            Existing SavedData to check lookups against. If new variables conflict against
-	 *            these, the result will not be included in the return value.
+	 * @param existing Existing SavedData to check lookups against. If new variables conflict
+	 *                 against these, the result will not be included in the return value.
 	 * @return
 	 */
 	public List<LookupAndCheckResult> doLookup(MemBuffer input, int sp, List<LookupTable> tables,
@@ -95,12 +115,18 @@ public class LookupStep extends StepBranchless {
 		return out;
 	}
 
+	@Override
 	public String toString() {
-		return "LookupStep(data: " + this.data.toString() + ")";
+		return "LookupStep(instruction: \"" + this.instructionText + "\" data: "
+				+ this.data.toString() + ")";
 	}
 
 	public boolean isEmpty() {
 		return this.data.isEmpty();
+	}
+
+	public LookupStep copy() {
+		return new LookupStep(instructionText, lineNumber, charPosition, note);
 	}
 
 	@Override

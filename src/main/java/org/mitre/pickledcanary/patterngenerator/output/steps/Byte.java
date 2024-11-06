@@ -46,6 +46,11 @@ public class Byte extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "BYTE Value: " + this.value;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

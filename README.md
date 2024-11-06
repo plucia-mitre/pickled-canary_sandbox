@@ -132,6 +132,8 @@ Requirements:
       `Build Path` > `Add to Build Path`
    1. Right click on `src/test/java` and choose `Build Path` > `Use as Source
       Folder`
+   1. Right click on `src/test/resources` and choose `Build Path` > `Use as Source
+      Folder`
    1. Right click on `generated-src/antlr/main/java` and choose `Build Path` > `Use
       as Source Folder`
 1. To run the code, click the green run button and select "Ghidra" as the run configuration, then click "OK".

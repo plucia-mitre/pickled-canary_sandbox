@@ -37,6 +37,11 @@ public class Label extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "LABEL: " + value;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

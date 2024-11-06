@@ -49,6 +49,11 @@ public class MaskedByte extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "MASKED BYTE Mask: " + mask + "; Value: " + value;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {

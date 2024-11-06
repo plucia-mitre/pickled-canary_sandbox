@@ -15,7 +15,8 @@ line:
 	| pc_command
 	| pc_block_command
 	| instruction
-	| meta;
+	| meta
+	| context;
 
 pc_command: TICK pc_command_body EXIT_TICK;
 
@@ -58,3 +59,5 @@ byte: BYTE;
 instruction: INSTRUCTION;
 
 meta: META;
+
+context: CONTEXT;

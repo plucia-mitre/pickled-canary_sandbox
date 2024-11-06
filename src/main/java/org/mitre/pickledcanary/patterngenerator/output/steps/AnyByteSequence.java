@@ -54,9 +54,11 @@ public class AnyByteSequence extends StepBranchless {
 			throw new IllegalArgumentException(String.format(
 					"ANY_BYTES min, max and interval must be nonnegative, and min must be smaller than or equal to max: `%s`",
 					toStringHelper(minInput, maxInput, intervalInput)));
-		} else if (intervalInput != null && (intervalInput > (maxInput - minInput)) && (maxInput != minInput)) {
-			throw new IllegalArgumentException(String.format("ANY_BYTES interval must be less than (max-min): `%s`",
-					toStringHelper(minInput, maxInput, intervalInput)));
+		} else if (intervalInput != null && (intervalInput > (maxInput - minInput))
+				&& (maxInput != minInput)) {
+			throw new IllegalArgumentException(
+					String.format("ANY_BYTES interval must be less than (max-min): `%s`",
+							toStringHelper(minInput, maxInput, intervalInput)));
 		}
 	}
 
@@ -83,6 +85,7 @@ public class AnyByteSequence extends StepBranchless {
 		return this.interval;
 	}
 
+	@Override
 	public String toString() {
 		return toStringHelper(this.min, this.max, this.interval);
 	}

@@ -33,6 +33,11 @@ public class NegativeLookahead extends StepBranchless {
 	}
 
 	@Override
+	public String toString() {
+		return "NEGATIVE LOOK AHEAD Pattern: " + pattern.toString();
+	}
+
+	@Override
 	/**
 	 * THIS ISN'T GREAT! It compares the inner patterns as JSONObjects, which will almost always say
 	 * they are different even if the content is the same!

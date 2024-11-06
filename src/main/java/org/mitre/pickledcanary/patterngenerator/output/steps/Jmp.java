@@ -44,6 +44,11 @@ public class Jmp extends Step {
 	}
 
 	@Override
+	public String toString() {
+		return "JMP Dest: " + this.dest;
+	}
+
+	@Override
 	public boolean equals(Object o) {
 		// self check
 		if (this == o) {
