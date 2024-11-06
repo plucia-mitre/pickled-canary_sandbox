@@ -3,22 +3,22 @@
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
 
 import ghidra.program.model.lang.RegisterValue;
 
 public class Context extends StepBranchless {
 
-	private List<RegisterValue> contextVars;
+	private Collection<RegisterValue> contextVars;
 
 	public Context() {
 		super(StepType.CONTEXT, null);
-		contextVars = new ArrayList<RegisterValue>();
+		contextVars = new HashSet<RegisterValue>();
 	}
 
-	public List<RegisterValue> getContextVars() {
+	public Collection<RegisterValue> getContextVars() {
 		return contextVars;
 	}
 	
@@ -52,7 +52,6 @@ public class Context extends StepBranchless {
 			return false;
 		}
 		
-		// TODO: Is this sufficient? does order matter in this list?
 		return this.contextVars.containsAll(other.contextVars);
 	}
 }
