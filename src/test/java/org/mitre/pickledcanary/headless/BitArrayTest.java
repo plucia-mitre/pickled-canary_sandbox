@@ -1,7 +1,7 @@
 
 // Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import org.junit.Assert;
 import org.junit.Test;

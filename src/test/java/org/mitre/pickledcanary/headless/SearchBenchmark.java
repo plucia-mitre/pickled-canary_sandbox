@@ -1,13 +1,14 @@
 
 // Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Assert;
+import org.mitre.pickledcanary.PickledCanary;
 import org.mitre.pickledcanary.search.Pattern;
 import org.mitre.pickledcanary.search.SavedDataAddresses;
 

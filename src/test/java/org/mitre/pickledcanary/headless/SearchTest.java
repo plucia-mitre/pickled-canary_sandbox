@@ -1,6 +1,6 @@
 // Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import ghidra.program.database.ProgramBuilder;
 import ghidra.program.model.data.Pointer32DataType;
@@ -8,6 +8,7 @@ import ghidra.program.model.mem.Memory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mitre.pickledcanary.PickledCanary;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Byte;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Match;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Step;

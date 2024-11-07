@@ -1,10 +1,11 @@
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mitre.pickledcanary.PickledCanary;
 import org.mitre.pickledcanary.search.SavedDataAddresses;
 
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;

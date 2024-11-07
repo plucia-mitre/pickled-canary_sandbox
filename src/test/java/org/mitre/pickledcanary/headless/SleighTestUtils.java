@@ -1,4 +1,4 @@
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import java.io.IOException;
 import java.net.URL;
