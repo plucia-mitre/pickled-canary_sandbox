@@ -15,8 +15,7 @@ line:
 	| pc_command
 	| pc_block_command
 	| instruction
-	| meta
-	| context;
+	| meta;
 
 pc_command: TICK pc_command_body EXIT_TICK;
 
@@ -25,7 +24,8 @@ pc_command_body:
 	| byte_string
 	| masked_byte
 	| any_bytes
-	| label;
+	| label
+	| context;
 
 byte_match: BYTE_PREFIX byte;
 byte_string: BYTE_STRING;
@@ -60,4 +60,9 @@ instruction: INSTRUCTION;
 
 meta: META;
 
-context: CONTEXT;
+context:
+	CONTEXT_PREFIX CONTEXT_NEWLINE? context_entry WHITESPACE? (
+		(SEMICOLON | CONTEXT_NEWLINE) context_entry WHITESPACE?
+	)* CONTEXT_NEWLINE? CONTEXT_END;
+
+context_entry: CONTEXT_VALUE;

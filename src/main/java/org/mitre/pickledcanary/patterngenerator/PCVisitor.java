@@ -109,6 +109,18 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private final Stack<Integer> asmContextOrStack; // tracks where the start of the split steps
 	private RegisterValue asmCurrentContext; // current context used for assembling instructions
 	private PatternContext outputContext; // contains the generated pattern steps
+	
+
+	/**
+	 * Individual key-value pairs within a single "CONTEXT" block
+	 */
+	private final HashMap<String, RegisterValue> contextEntries;
+	
+	/**
+	 * Local cache so we're not constantly querying to get this list
+	 */
+	private List<Register> validContextRegisters = null;
+	
 
 	// Needed to reimplement this class, luckily it's small
 	static class ContextAdapter implements DisassemblerContextAdapter {
@@ -230,6 +242,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.asmContextStack = new Stack<>();
 		this.asmContextOrStack = new Stack<>();
 		this.outputContext = new PatternContext();
+		this.contextEntries = new HashMap<>();
 	}
 
 	/**
@@ -247,6 +260,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.asmContextStack.clear();
 		this.asmContextOrStack.clear();
 		this.outputContext = new PatternContext();
+		this.contextEntries.clear();
 	}
 
 	private static void raiseInvalidInstructionException(LookupStep lookupStep) {
@@ -436,48 +450,73 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		return null;
 	}
+	
+	@Override
+	public Void visitContext_entry(pc_grammar.Context_entryContext ctx) {
+
+		String[] parts = ctx.getText().split("=");
+		String name = parts[0].strip();
+		String valueString = parts[1].strip();
+		BigInteger value = null;
+
+		try {
+			if (valueString.length() > 2) {
+				String valuePrefix = valueString.substring(0, 2);
+				if (valuePrefix.equals("0x")) {
+					value = new BigInteger(valueString.substring(2), 16);
+				}
+				else if (valuePrefix.equals("0b")) {
+					value = new BigInteger(valueString.substring(2), 2);
+				}
+			}
+			if (value == null) {
+				value = new BigInteger(valueString);
+			}
+		}
+		catch (NumberFormatException e) {
+			throw new QueryParseException(
+				"Unable to parse context value: '" + valueString +
+					" '. Is it properly prefixed with '0x' for hex, '0b' for binary, or no prefix for base 10?",
+				ctx);
+		}
+
+		if (this.contextEntries.containsKey(name) ){
+			throw new QueryParseException(
+				"Cannot specify context value more than once! '" + name + "' was duplicated.", ctx);
+		}
+		
+		if (this.validContextRegisters == null) {
+			this.validContextRegisters = currentProgram.getProgramContext().getContextRegisters();
+		}
+		Optional<Register> match = this.validContextRegisters.stream().filter(reg -> reg.getName().equals(name)).findFirst();
+
+		if (match.isEmpty()) {
+			throw new QueryParseException("Invalid context variable '" + name + "' for language!", ctx);
+			
+		}
+
+		RegisterValue contextVar = new RegisterValue(match.get(), value);
+		System.err.println("Going to set this context variable: " + contextVar);
+		this.contextEntries.put(name, contextVar);
+
+		return null;
+	}
 
 	@Override
 	public Void visitContext(pc_grammar.ContextContext ctx) {
-		String context = ctx.getText();
-		// Remove `CONTEXT` at the start
-		context = context.replaceFirst("^ *`CONTEXT`[\r\n]+", "");
-		// Remove "`CONTEXT_END`" at the end
-		context = context.substring(0, context.length() - 9);
-		// Remove any comments
-		context = context.replaceAll("[\n\r]+ *;[^\n\r]*", "");
-
-		// Get the context variables for this language
-		List<Register> contextVars = currentProgram.getProgramContext().getContextRegisters();
-
-		// Proposed context variable names and values
-		JSONObject proposed = new JSONObject(context);
-
-		// Proposed context variable names
-		var names = proposed.keys();
-
+		visitChildren(ctx);
 		// Transient context override step
 		Context contextStep = new Context();
-
-		while (names.hasNext()) {
-			String name = names.next();
-
-			// Check if proposed context variable exists for this language
-			Optional<Register> match = contextVars.stream().filter(reg -> reg.getName().equals(name)).findFirst();
-
-			if (match.isPresent()) {
-				RegisterValue contextVar = new RegisterValue(match.get(), BigInteger.valueOf(proposed.getInt(name)));
-
-				// Context variable value to set later
-				System.err.println("Going to set this context variable: " + contextVar);
-				contextStep.addContextVar(contextVar);
-			}
-			else {
-				throw new QueryParseException("Invalid context variable for language!", ctx);
-			}
-
+		
+		for (RegisterValue contextVar: contextEntries.values()) {
+			contextStep.addContextVar(contextVar);
 		}
+		
+		// Reset entries so we're ready for the next context block
+		contextEntries.clear();
+
 		this.currentContext.steps().add(contextStep);
+ 
 		return null;
 	}
 

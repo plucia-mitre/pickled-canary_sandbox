@@ -21,10 +21,12 @@ move a0,`Q1`
 `} NOT_END`
 jalr `Q1`
 
-`META`{
+`META`
+{
 "foo":"bar",
 "baz":"boop"
-}`META_END`
+}
+`META_END`
 
 `OR_START{`
 `=0x3`
@@ -45,5 +47,17 @@ cmp `Q2`,#0x0
 `ANY_BYTES{0,4,2}`
 mov `Q1`,#0x200
 
+
+`CONTEXT asdf=1 ; bbb = 2 CONTEXT_END`
+cmp r1,#0x0
+`CONTEXT
+aaaa=0x22 CONTEXT_END`
+bne `*`
+
+`CONTEXT asdf=44 CONTEXT_END`
+
+cmp `Q2`,#0x0
+`ANY_BYTES{0,4,2}`
+mov `Q1`,#0x200
 
 ; Copyright (C) 2023 The MITRE Corporation All Rights Reserved
