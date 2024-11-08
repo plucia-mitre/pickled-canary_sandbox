@@ -3,6 +3,8 @@
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
+import java.util.Objects;
+
 import org.json.JSONObject;
 
 public class Split extends Step {
@@ -69,5 +71,25 @@ public class Split extends Step {
 	@Override
 	public String toString() {
 		return "SPLIT Dest1: " + this.dest1 + "; Dest2: " + this.dest2;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		Split other = (Split) o;
+		// field comparison
+		return Objects.equals(this.stepType, other.stepType) && this.dest1 == other.dest1 &&
+			this.dest2 == other.dest2;
 	}
 }

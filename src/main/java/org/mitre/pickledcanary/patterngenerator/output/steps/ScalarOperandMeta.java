@@ -232,4 +232,56 @@ public class ScalarOperandMeta extends OperandMeta {
 
 		return out;
 	}
+
+	public boolean hasContext() {
+		return walkExpression(this.expression);
+	}
+
+	// Detect if at least one ContextField exists in expression 
+	// TODO: Is there a decent way to make this logic reusable?
+	// It's very similar to expressionToJson()
+	protected boolean walkExpression(PatternExpression expression) {
+		if (expression instanceof BinaryExpression binaryExpression) {
+			return walkBinaryExpression(binaryExpression);
+		} else if (expression instanceof UnaryExpression unaryExpression) {
+			return walkUnaryExpression(unaryExpression);
+		} else if (expression instanceof OperandValue operandValue) {
+			return walkOperandValueExpression(operandValue);
+		} else if (expression instanceof ContextField) {
+			return true;
+		}
+		return false;
+	}
+
+	protected boolean walkBinaryExpression(BinaryExpression expression) {
+		if (walkExpression(expression.getLeft()) || walkExpression(expression.getRight())) {
+			return true;
+		}
+		return false;
+	}
+	
+	protected boolean walkUnaryExpression(UnaryExpression expression) {
+		if (walkExpression(expression.getUnary())) {
+			return true;
+		}
+		return false;
+	}
+	
+	protected boolean walkOperandValueExpression(OperandValue operandValue) {
+		OperandSymbol sym = operandValue.getConstructor().getOperand(operandValue.getIndex());
+		PatternExpression patexp = sym.getDefiningExpression();
+		if (patexp == null) {
+			TripleSymbol defSym = sym.getDefiningSymbol();
+			if (defSym != null) {
+				patexp = defSym.getPatternExpression();
+			}
+			if (patexp == null) {
+				return false;
+			}
+		}
+		if (walkExpression(patexp)) {
+			return true;
+		}
+		return false;
+	}
 }

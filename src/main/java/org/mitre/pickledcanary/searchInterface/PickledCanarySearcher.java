@@ -24,6 +24,8 @@ package org.mitre.pickledcanary.searchInterface;
 
 import java.awt.event.TextEvent;
 import java.awt.event.TextListener;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import org.json.JSONObject;
@@ -83,6 +85,10 @@ public class PickledCanarySearcher {
 		// Set our message to say that we're compiling... and tell everyone who cares
 		this.compiledPattern = PickledCanarySearcher.COMPILING_PATTERN;
 		this.notifyListeners();
+		
+		monitor.setMessage(PickledCanarySearcher.COMPILING_PATTERN);
+
+		Instant start = Instant.now();
 
 		// Parse and compile our pattern to json (and tell everyone who cares)
 		visitor.setCurrentAddress(currentAddress);
@@ -95,9 +101,20 @@ public class PickledCanarySearcher {
 
 		// Now assemble our pattern into a Java-runnable pattern
 		Pattern patternCompiled = visitor.getPattern().wrap();
+		
+		System.out.println("Ptn: " + patternCompiled.toString());
 
+		Instant searchStart = Instant.now();
 		// Run the pattern
 		PickledCanary.runAll(monitor, program, patternCompiled, accumulator);
+		
+		Instant finish = Instant.now();
+
+		Duration assembleDuration = Duration.between(start, searchStart);
+		Duration searchDuration = Duration.between(searchStart, finish);
+		
+		System.out.println("Assembling took " + assembleDuration.getSeconds() + " seconds plus " + assembleDuration.getNano() + " nano-seconds");
+		System.out.println("Searching took " + searchDuration.getSeconds() + " seconds plus " + searchDuration.getNano() + " nano-seconds");
 
 		monitor.setIndeterminate(false);
 	}

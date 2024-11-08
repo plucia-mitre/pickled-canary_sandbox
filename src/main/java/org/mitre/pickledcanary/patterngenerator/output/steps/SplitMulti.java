@@ -5,6 +5,7 @@ package org.mitre.pickledcanary.patterngenerator.output.steps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -62,5 +63,34 @@ public class SplitMulti extends Step {
 			strDests.add(String.valueOf(dest));
 		}
 		return "SPLITMULTI Dests: [" + String.join(",", strDests) + "]";
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		SplitMulti other = (SplitMulti) o;
+		// field comparison
+		if (!Objects.equals(this.stepType, other.stepType)) {
+			return false;
+		}
+		if (this.dests.size() != other.dests.size())
+			return false;
+		for (int i = 0; i < this.dests.size(); i++) {
+			if (!this.dests.get(i).equals(other.dests.get(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

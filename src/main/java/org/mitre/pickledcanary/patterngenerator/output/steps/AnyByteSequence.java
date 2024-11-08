@@ -3,6 +3,8 @@
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
+import java.util.Objects;
+
 import org.json.JSONObject;
 
 public class AnyByteSequence extends StepBranchless {
@@ -93,5 +95,25 @@ public class AnyByteSequence extends StepBranchless {
 			return "ANY_BYTES{" + minParam + "," + maxParam + "}";
 		}
 		return "ANY_BYTES{" + minParam + "," + maxParam + "," + intervalParam + "}";
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		AnyByteSequence other = (AnyByteSequence) o;
+		// field comparison
+		return Objects.equals(this.stepType, other.stepType) && this.min == other.min &&
+			this.max == other.max && this.interval == other.interval;
 	}
 }

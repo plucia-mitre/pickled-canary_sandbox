@@ -1,7 +1,7 @@
 
 // Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import ghidra.program.database.ProgramBuilder;
 import ghidra.program.model.address.Address;
@@ -9,6 +9,7 @@ import ghidra.program.model.listing.Program;
 import ghidra.test.AbstractGhidraHeadlessIntegrationTest;
 import ghidra.util.task.TaskMonitor;
 import org.junit.Assert;
+import org.mitre.pickledcanary.PickledCanary;
 
 import java.util.ArrayList;
 import java.util.List;

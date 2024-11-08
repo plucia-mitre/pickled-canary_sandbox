@@ -120,8 +120,10 @@ public class Pattern {
 	@Override
 	public String toString() {
 		StringBuilder out = new StringBuilder("Pattern: \n\tSteps:");
+		int idx = 0;
 		for (Step s : this.steps) {
-			out.append("\n\t\t").append(s.toString());
+			out.append("\n\t\t" + idx + ": ").append(s.toString());
+			idx ++;
 		}
 
 		return out.toString();

@@ -3,6 +3,8 @@
 
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
+import java.util.Objects;
+
 import org.json.JSONObject;
 
 public class Label extends StepBranchless {
@@ -37,5 +39,24 @@ public class Label extends StepBranchless {
 	@Override
 	public String toString() {
 		return "LABEL: " + value;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		// self check
+		if (this == o) {
+			return true;
+		}
+		// null check
+		if (o == null) {
+			return false;
+		}
+		// type check and cast
+		if (getClass() != o.getClass()) {
+			return false;
+		}
+		Label other = (Label) o;
+		// field comparison
+		return Objects.equals(this.stepType, other.stepType) && this.value.equals(other.value);
 	}
 }

@@ -1,7 +1,7 @@
 
 // Copyright (C) 2024 The MITRE Corporation All Rights Reserved
 
-package org.mitre.pickledcanary;
+package org.mitre.pickledcanary.headless;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -294,7 +294,7 @@ public class X86LePickledCanaryTest extends PickledCanaryTest {
 	@Test
 	public void testEmptyCommand() {
 		exceptionRule.expect(QueryParseException.class);
-		exceptionRule.expectMessage("Failed to parse query at line 2 col 1: mismatched input '`' expecting {'=', '&', ANY_BYTES, LABEL, BYTE_STRING}");
+		exceptionRule.expectMessage("Failed to parse query at line 2 col 1: mismatched input '`' expecting {'=', '&', ANY_BYTES, 'CONTEXT', LABEL, BYTE_STRING}");
 		final String testQuery = ";something\n``";
 		generatePatternTestHelper(testQuery, "");
 	}

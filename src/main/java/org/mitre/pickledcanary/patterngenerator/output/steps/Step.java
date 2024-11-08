@@ -46,4 +46,6 @@ public abstract class Step {
 	public void increment(int amount) {
 		this.increment(amount, 0);
 	}
+	
+	public abstract boolean equals(Object o);
 }
