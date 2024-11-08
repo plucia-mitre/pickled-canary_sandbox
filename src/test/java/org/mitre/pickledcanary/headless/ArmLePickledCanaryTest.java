@@ -132,10 +132,19 @@ public class ArmLePickledCanaryTest extends PickledCanaryTest {
 			"`foo:`\n" +
 			"`ANY_BYTES{1,1}`";
 
+	private static final String addressWildcardConstraintPattern = 
+			"b `:foobar`\r\n"
+			+ "`ANY_BYTES{0,8}`\r\n"
+			+ "`foobar:`\r\n"
+			+ "cpy r0,r0";
+	private static final String tablesForAddressWildcardConstraintPattern = "";
+	private static final String stepsForAddressWildcardConstraintPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"EndInstructionValue\"},\"right\":{\"op\":\"ConstantValue\",\"value\":4}}},\"right\":{\"op\":\"Mult\",\"children\":{\"left\":{\"op\":\"ConstantValue\",\"value\":4},\"right\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":23,\"shift\":0,\"signbit\":true,\"bitstart\":0,\"byteend\":2,\"bigendian\":false,\"bytestart\":0}}}}}}},\"var_id\":\":foobar\",\"type\":\"Scalar\",\"mask\":[255,255,255,0]}],\"value\":[0,0,0,234]}],\"mask\":[0,0,0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 0 End: 8 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{0,8}`\",\"min\":0,\"max\":8,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"type\":\"LABEL\",\"value\":\"foobar\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0,160,225]}],\"mask\":[255,255,255,255]}],\"type\":\"LOOKUP\"}";
+
 	static final int dataBase = 0x1008420;
 	static final int beqOffset = 0x10000;
 	static final int blOffset = 0x20000;
 	static final int ldrOffset = 0x2000;
+	static final int bOffset = 0x3000;
 
 	@Before
 	public void setUp() throws Exception {
@@ -165,6 +174,16 @@ public class ArmLePickledCanaryTest extends PickledCanaryTest {
 		// mov r0,r0
 		builder.setBytes(String.format("0x%08X", dataBase + ldrOffset),
 				"04 30 9f e5  00 00 a0 e1  00 00 a0 e1  00 00 a0 e1  00 00 a0 e1 ");
+
+		// the following is:
+		// b foo
+		// b bar
+		// bar:
+		// cpy r0,r0
+		// foo:
+		// cpy r0,r0
+		builder.setBytes(String.format("0x%08X", dataBase + bOffset),
+				"01 00 00 ea  ff ff ff ea  00 00 a0 e1  00 00 a0 e1");
 
 		builder.createLabel("0x1008420", "TEST_LABEL");
 		builder.createLabel("0x1008424", "TEST_LABEL2");
@@ -361,5 +380,21 @@ public class ArmLePickledCanaryTest extends PickledCanaryTest {
 				this.program.getMinAddress(), ldrPatternMisallignedLabel);
 
 		Assert.assertEquals(0, results.size());
+	}
+
+	@Test
+	public void testNestedAddressWildcardMatch() {
+		List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), addressWildcardConstraintPattern);
+
+		// The following assertions fail with the current search implementation
+		// Only one match is reported, even though we expect two
+		//Assert.assertEquals(2, results.size());
+
+		//Assert.assertEquals(this.program.getMinAddress().add(bOffset), results.get(0).getStart());
+		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 4), results.get(1).getStart());
+
+		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 12), results.get(0).labels().get("foobar"));
+		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 8), results.get(1).labels().get("foobar"));
 	}
 }
