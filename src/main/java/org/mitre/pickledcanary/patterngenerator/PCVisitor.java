@@ -552,7 +552,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		asmContextStack.add(new ContextStackItem(asmCurrentContext, 0));
 		while (asmContextStack.size() != 0) {
 			// process each context branch
-			ContextStackItem csi = asmContextStack.removeLast();
+			ContextStackItem csi = asmContextStack.pop();
 			asmCurrentContext = csi.context;
 			for (int i = csi.startIdx; i < this.currentContext.steps.size(); i++) {
 				// process each instruction within the context branch
@@ -562,22 +562,22 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 							+ step.getStepType().toString() + " at index " + i);
 				}
 				switch (step.getStepType()) {
-				case Step.StepType.SPLITMULTI:
-					int nextInst = visit((SplitMulti) step);
-					i = nextInst - 1;
-					break;
-				case Step.StepType.JMP:
-					nextInst = visit((Jmp) step);
-					i = nextInst - 1;
-					break;
-				case Step.StepType.LOOKUP:
-					visit(i, ((LookupStep) step).copy());
-					break;
-				case Step.StepType.CONTEXT:
-					visit((Context) step);
-					break;
-				default:
-					visit(step);
+					case SPLITMULTI:
+						int nextInst = visit((SplitMulti) step);
+						i = nextInst - 1;
+						break;
+					case JMP:
+						nextInst = visit((Jmp) step);
+						i = nextInst - 1;
+						break;
+					case LOOKUP:
+						visit(i, ((LookupStep) step).copy());
+						break;
+					case CONTEXT:
+						visit((Context) step);
+						break;
+					default:
+						visit(step);
 				}
 			}
 			if (asmContextStack.size() != 0) {
