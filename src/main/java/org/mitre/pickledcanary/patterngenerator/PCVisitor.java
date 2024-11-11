@@ -585,7 +585,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				// add a jump, which will later be filled in with dest of end of pattern
 				this.outputContext.steps().add(new Jmp(0));
 				// add the next destination for a Split or SplitMulti block
-				int correspondingSplitIndex = asmContextOrStack.removeLast();
+				int correspondingSplitIndex = asmContextOrStack.pop();
 				SplitMulti sm = (SplitMulti) this.outputContext.steps().get(correspondingSplitIndex);
 				sm.addDest(this.outputContext.steps().size());
 			}
