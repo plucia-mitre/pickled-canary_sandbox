@@ -251,7 +251,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
-		// region Visit methods
+		// #region Visit methods
 		// Returns the index of the step in the output of the first visitor from where the next branch
 		// should begin
 		private int visit(SplitMulti splitMultiStep) {
@@ -312,7 +312,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		private void visit(Step step) {
 			this.outputContext.steps().add(step);
 		}
-		// end region
+		// #endregion
 	};
 
 	public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
