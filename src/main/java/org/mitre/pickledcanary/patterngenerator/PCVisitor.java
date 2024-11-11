@@ -94,7 +94,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private JSONObject metadata;
 	private final MyErrorListener errorListener;
 
-	private HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>> variantCtx;
+	private ResultMap variantCtx;
 
 	// TODO: An instruction can set any address to change context. We current assume that an
 	// instruction can change the context of only the next instruction.
@@ -150,7 +150,25 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 	}
 	
-	private record ContextChanges(RegisterValue localCtx, HashMap<Address, RegisterValue> globalCtx) {};
+	private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {};
+
+	private record ResultMap(HashMap<AssemblyParseResult, PatternMap> map) {
+		ResultMap() {
+			this(new HashMap<AssemblyParseResult, PatternMap>());
+		}
+	};
+
+	private record PatternMap(HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap> map) {
+		PatternMap() {
+			this(new HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap>());
+		}
+	};
+
+	private record AddressMap(HashMap<Address, RegisterValue> map) {
+		AddressMap() {
+			this(new HashMap<Address, RegisterValue>());
+		}
+	};
 
 	public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
 			RegisterValue inputCtx) {
@@ -171,32 +189,29 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		// A single encoding may change the global context at multiple addresses
-		HashMap<Address, RegisterValue> globalCtx = new HashMap<>();
+		AddressMap globalCtx = new AddressMap();
 
 		for (Entry<Address, RegisterValue> ent : contextAdapter.contextsOut.entrySet()) {
-			globalCtx.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
+			globalCtx.map.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
 		}
 		return new ContextChanges(localCtx, globalCtx);
 	}
 
-	private void printContextChanges(
-			HashMap<AssemblyParseResult, HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>> variantCtx) {
+	private void printContextChanges(ResultMap variantCtx) {
 		System.err.print(System.lineSeparator());
 
-		for (AssemblyParseResult parseResult : variantCtx.keySet()) {
+		for (AssemblyParseResult parseResult : variantCtx.map.keySet()) {
 			System.err.println("Instruction variant: " + parseResult);
 
-			HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>> encodingCtx = variantCtx
-					.get(parseResult);
+			PatternMap encodingCtx = variantCtx.map.get(parseResult);
 
-			for (DefaultWildAssemblyResolvedPatterns resolvedPats : encodingCtx.keySet()) {
+			for (DefaultWildAssemblyResolvedPatterns resolvedPats : encodingCtx.map.keySet()) {
 				System.err.println("Instruction encoding: " + resolvedPats.getInstruction());
 
-				HashMap<Address, RegisterValue> addressCtx = encodingCtx.get(resolvedPats);
+				AddressMap addressCtx = encodingCtx.map.get(resolvedPats);
 
-				for (Address address : addressCtx.keySet()) {
-					System.err.println(
-							"Context: " + addressCtx.get(address) + " set at address: " + address);
+				for (Address address : addressCtx.map.keySet()) {
+					System.err.println("Context: " + addressCtx.map.get(address) + " set at address: " + address);
 				}
 				System.err.print(System.lineSeparator());
 			}
@@ -277,6 +292,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				lookupStep);
 	}
 
+	// region Visit methods
 	@Override
 	public Void visitAny_bytes(pc_grammar.Any_bytesContext ctx) {
 
@@ -518,7 +534,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
  
 		return null;
 	}
-
+	// end region
+	
 	/**
 	 * After the user pattern is passed through the first visitor above, run the output through this
 	 * second visitor to make the generated pattern context-aware.
@@ -686,7 +703,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				.fromRegisterValue(asmCurrentContext);
 
 		System.err.println("Context going into assembler: " + assemblerCtx);
-		this.variantCtx = new HashMap<>();
+		this.variantCtx = new ResultMap();
 		this.nextContexts = new HashSet<>();
 
 		for (AssemblyParseResult p : parses) {
@@ -707,8 +724,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				return null;
 			}
 
-			var encodingCtx = new HashMap<DefaultWildAssemblyResolvedPatterns, HashMap<Address, RegisterValue>>();
-
+			PatternMap encodingCtx = new PatternMap();
+			
 			for (AssemblyResolution res : results) {
 				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
 					// We must compute the context changes (if any) for every pats
@@ -718,12 +735,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 					builder.addAssemblyPattern(pats, contextChanges.localCtx());
 
-					HashMap<Address, RegisterValue> encodingContextChanges = contextChanges.globalCtx();
+					AddressMap encodingContextChanges = contextChanges.globalCtx();
 
-					encodingCtx.put(pats, encodingContextChanges);
+					encodingCtx.map.put(pats, encodingContextChanges);
 
-					for (Address a : encodingContextChanges.keySet()) {
-						nextContexts.add(encodingContextChanges.get(a));
+					for (Address a : encodingContextChanges.map.keySet()) {
+						nextContexts.add(encodingContextChanges.map.get(a));
 //						if (!futureContexts.containsKey(a)) {
 //							futureContexts.put(a, new HashSet<>());
 //						}
@@ -731,7 +748,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					}
 				}
 			}
-			variantCtx.put(p, encodingCtx);
+			variantCtx.map.put(p, encodingCtx);
 		}
 		printContextChanges(this.variantCtx);
 		return builder.buildLookupStep();
