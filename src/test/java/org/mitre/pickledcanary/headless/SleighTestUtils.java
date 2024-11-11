@@ -1,9 +1,7 @@
 package org.mitre.pickledcanary.headless;
 
-import java.io.IOException;
 import java.net.URL;
 
-import org.xml.sax.SAXException;
 
 import generic.jar.ResourceFile;
 import generic.test.AbstractGenericTest;
@@ -23,8 +21,7 @@ public class SleighTestUtils {
 	}
 	
 	/* Quickly create a SleighLanguage instance from .ldefs */
-	public static SleighLanguage lazyLanguage(ResourceFile lDefsFile) 
-			throws SAXException, IOException {
+	public static SleighLanguage lazyLanguage(ResourceFile lDefsFile) {
 
 		/* This constructor is private so we need to invoke it using the
 		 * invokeConstructor method */

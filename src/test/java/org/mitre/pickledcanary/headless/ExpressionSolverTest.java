@@ -283,4 +283,112 @@ public class ExpressionSolverTest extends AbstractGhidraHeadlessIntegrationTest 
 
 		Assert.assertEquals(58, result);
 	}
+
+	@Test
+	public void testComplexExpression()
+			throws Exception {
+		PatchPackedEncode encode = new PatchPackedEncode();
+		encode.clear();
+
+		encode.openElement(ELEM_XOR_EXP);
+
+		encode.openElement(ELEM_LSHIFT_EXP);
+
+		encode.openElement(ELEM_PLUS_EXP);
+		encode.openElement(ELEM_TOKENFIELD);
+		encode.writeBool(ATTRIB_BIGENDIAN, false);
+		encode.writeBool(ATTRIB_SIGNBIT, false);
+		encode.writeSignedInteger(ATTRIB_STARTBIT, 0);
+		encode.writeSignedInteger(ATTRIB_ENDBIT, 5);
+		encode.writeSignedInteger(ATTRIB_STARTBYTE, 3);
+		encode.writeSignedInteger(ATTRIB_ENDBYTE, 3);
+		encode.writeSignedInteger(ATTRIB_SHIFT, 0);
+		encode.closeElement(ELEM_TOKENFIELD);
+
+		encode.openElement(ELEM_INTB);
+		encode.writeSignedInteger(ATTRIB_VAL, 4);
+		encode.closeElement(ELEM_INTB);
+		encode.closeElement(ELEM_PLUS_EXP);
+
+		encode.openElement(ELEM_INTB);
+		encode.writeSignedInteger(ATTRIB_VAL, 2);
+		encode.closeElement(ELEM_INTB);
+		encode.closeElement(ELEM_LSHIFT_EXP);
+
+		encode.openElement(ELEM_CONTEXTFIELD);
+		encode.writeBool(ATTRIB_SIGNBIT, false);
+		encode.writeSignedInteger(ATTRIB_STARTBIT, 28);
+		encode.writeSignedInteger(ATTRIB_ENDBIT, 31);
+		encode.writeSignedInteger(ATTRIB_STARTBYTE, 3);
+		encode.writeSignedInteger(ATTRIB_ENDBYTE, 3);
+		encode.writeSignedInteger(ATTRIB_SHIFT, 0);
+		encode.closeElement(ELEM_CONTEXTFIELD);
+
+		encode.closeElement(ELEM_XOR_EXP);
+
+		// ((((bits 0-5 of 0x7a [aka: 58]) + 4) << 2) ^ (bits 28-31 of 0x89abcdef [aka: 15]) == 247
+
+		PatternExpression expression = getExpressionInstance(encode);
+
+		byte[] data = { 0, 0, 0, 0x7a };
+
+		ProgramBuilder builder = new ProgramBuilder("arm_le_test", "ARM:LE:32:v8");
+		Program program = builder.getProgram();
+		MemBuffer b = new ByteMemBufferImpl(program.getMinAddress(), data, false);
+
+		int[] context = { 0x89ABCDEF };
+		long result = LookupDataExpressionSolver.computeExpression(expression, b, context, 0, 0);
+
+		Assert.assertEquals(247, result);
+	}
+
+	@Test
+	public void testLongContextFieldExpression()
+			throws DecoderException, IOException {
+		PatchPackedEncode encode = new PatchPackedEncode();
+		encode.clear();
+		encode.openElement(ELEM_CONTEXTFIELD);
+		encode.writeBool(ATTRIB_SIGNBIT, false);
+		encode.writeSignedInteger(ATTRIB_STARTBIT, 16);
+		encode.writeSignedInteger(ATTRIB_ENDBIT, 24);
+		encode.writeSignedInteger(ATTRIB_STARTBYTE, 0);
+		encode.writeSignedInteger(ATTRIB_ENDBYTE, 9);
+		encode.writeSignedInteger(ATTRIB_SHIFT, 0);
+		encode.closeElement(ELEM_CONTEXTFIELD);
+
+		PatternExpression expression = getExpressionInstance(encode);
+
+		int[] context = { 0x89ABCDEF, 0x01020304, 0x05060708 };
+		long result = LookupDataExpressionSolver.computeExpression(expression, null, context, 0, 0);
+
+		Assert.assertEquals(262, result);
+	}
+
+	@Test
+	public void testLongTokenFieldExpression()
+			throws Exception {
+		PatchPackedEncode encode = new PatchPackedEncode();
+		encode.clear();
+		encode.openElement(ELEM_TOKENFIELD);
+		encode.writeBool(ATTRIB_BIGENDIAN, false);
+		encode.writeBool(ATTRIB_SIGNBIT, false);
+		encode.writeSignedInteger(ATTRIB_STARTBIT, 0);
+		encode.writeSignedInteger(ATTRIB_ENDBIT, 5);
+		encode.writeSignedInteger(ATTRIB_STARTBYTE, 3);
+		encode.writeSignedInteger(ATTRIB_ENDBYTE, 9);
+		encode.writeSignedInteger(ATTRIB_SHIFT, 0);
+		encode.closeElement(ELEM_TOKENFIELD);
+
+		PatternExpression expression = getExpressionInstance(encode);
+
+		byte[] data = { 0, 0, 0, 0x7a, 1, 2, 3, 4, 5, 6 };
+
+		ProgramBuilder builder = new ProgramBuilder("arm_le_test", "ARM:LE:32:v8");
+		Program program = builder.getProgram();
+		MemBuffer b = new ByteMemBufferImpl(program.getMinAddress(), data, false);
+
+		long result = LookupDataExpressionSolver.computeExpression(expression, b, null, 0, 0);
+
+		Assert.assertEquals(3, result);
+	}
 }
