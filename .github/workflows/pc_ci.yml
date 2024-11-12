@@ -147,8 +147,8 @@ jobs:
         env:
           GHIDRA_INSTALL_DIR: ${{ github.workspace }}/../Ghidra/ghidra_${{ matrix.GHIDRA_VERSION }}_PUBLIC
         run: |
-          xvfb-run gradle -d build
-          xvfb-run gradle -d
+          xvfb-run gradle build
+          xvfb-run gradle
       - name: Archive PC Extension
         uses: actions/upload-artifact@v4
         with:

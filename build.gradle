@@ -60,6 +60,7 @@ repositories {
 }
 
 test {
+	jvmArgs '--add-exports', 'java.desktop/sun.awt=ALL-UNNAMED', '--add-exports', 'java.desktop/sun.swing=ALL-UNNAMED'
 	useJUnitPlatform()
 
 	maxHeapSize='1G'
