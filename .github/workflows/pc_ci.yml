@@ -146,11 +146,9 @@ jobs:
       - name: Execute Gradle build
         env:
           GHIDRA_INSTALL_DIR: ${{ github.workspace }}/../Ghidra/ghidra_${{ matrix.GHIDRA_VERSION }}_PUBLIC
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: |
-            gradle build
-            gradle
+        run: |
+          xvfb-run gradle build
+          xvfb-run gradle
       - name: Archive PC Extension
         uses: actions/upload-artifact@v4
         with:
@@ -246,9 +244,7 @@ jobs:
       - name: Execute Gradle test and coverage
         env:
           GHIDRA_INSTALL_DIR: ${{ github.workspace }}/../Ghidra/ghidra_${{ matrix.GHIDRA_VERSION }}_PUBLIC
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: gradle test jacocoTestReport
+        run: xvfb-run gradle test jacocoTestReport
       - name: Archive Coverage Report
         uses: actions/upload-artifact@v4
         with:
