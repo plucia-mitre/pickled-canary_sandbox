@@ -86,7 +86,7 @@ public class MiscTest extends AbstractGhidraHeadlessIntegrationTest {
 		});
 
 		Assert.assertEquals(
-			"ANY_BYTES min, max and interval must be nonnegative, and min must be smaller than or equal to max: `ANY_BYTES{5,0}`",
+			"ANY_BYTES min and max must be nonnegative, min must be smaller than or equal to max, and interval must be positive: `ANY_BYTES{5,0}`",
 			e.getMessage());
 
 		Assert.assertEquals(5, a.getMin());
@@ -106,21 +106,28 @@ public class MiscTest extends AbstractGhidraHeadlessIntegrationTest {
 			a.setMin(-1);
 		});
 		Assert.assertEquals(
-			"ANY_BYTES min, max and interval must be nonnegative, and min must be smaller than or equal to max: `ANY_BYTES{-1,2,1}`",
+			"ANY_BYTES min and max must be nonnegative, min must be smaller than or equal to max, and interval must be positive: `ANY_BYTES{-1,2,1}`",
 			e.getMessage());
 
 		e = Assert.assertThrows(IllegalArgumentException.class, () -> {
 			a.setInterval(-1);
 		});
 		Assert.assertEquals(
-			"ANY_BYTES min, max and interval must be nonnegative, and min must be smaller than or equal to max: `ANY_BYTES{1,2,-1}`",
+			"ANY_BYTES min and max must be nonnegative, min must be smaller than or equal to max, and interval must be positive: `ANY_BYTES{1,2,-1}`",
+			e.getMessage());
+		
+		e = Assert.assertThrows(IllegalArgumentException.class, () -> {
+			a.setInterval(0);
+		});
+		Assert.assertEquals(
+			"ANY_BYTES min and max must be nonnegative, min must be smaller than or equal to max, and interval must be positive: `ANY_BYTES{1,2,0}`",
 			e.getMessage());
 
 		e = Assert.assertThrows(IllegalArgumentException.class, () -> {
 			a.setMax(-1);
 		});
 		Assert.assertEquals(
-			"ANY_BYTES min, max and interval must be nonnegative, and min must be smaller than or equal to max: `ANY_BYTES{1,-1,1}`",
+			"ANY_BYTES min and max must be nonnegative, min must be smaller than or equal to max, and interval must be positive: `ANY_BYTES{1,-1,1}`",
 			e.getMessage());
 
 		e = Assert.assertThrows(IllegalArgumentException.class, () -> {
