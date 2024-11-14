@@ -472,45 +472,73 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		String[] parts = ctx.getText().split("=");
 		String name = parts[0].strip();
 		String valueString = parts[1].strip();
-		BigInteger value = null;
+		RegisterValue contextVar;
 
-		try {
-			if (valueString.length() > 2) {
-				String valuePrefix = valueString.substring(0, 2);
-				if (valuePrefix.equals("0x")) {
-					value = new BigInteger(valueString.substring(2), 16);
-				}
-				else if (valuePrefix.equals("0b")) {
-					value = new BigInteger(valueString.substring(2), 2);
-				}
-			}
-			if (value == null) {
-				value = new BigInteger(valueString);
-			}
-		}
-		catch (NumberFormatException e) {
-			throw new QueryParseException(
-				"Unable to parse context value: '" + valueString +
-					" '. Is it properly prefixed with '0x' for hex, '0b' for binary, or no prefix for base 10?",
-				ctx);
-		}
-
-		if (this.contextEntries.containsKey(name) ){
+		// Check name is valid
+		if (this.contextEntries.containsKey(name)) {
 			throw new QueryParseException(
 				"Cannot specify context value more than once! '" + name + "' was duplicated.", ctx);
 		}
-		
+
 		if (this.validContextRegisters == null) {
 			this.validContextRegisters = currentProgram.getProgramContext().getContextRegisters();
 		}
-		Optional<Register> match = this.validContextRegisters.stream().filter(reg -> reg.getName().equals(name)).findFirst();
+		Optional<Register> match = this.validContextRegisters.stream()
+				.filter(reg -> reg.getName().equals(name))
+				.findFirst();
 
 		if (match.isEmpty()) {
-			throw new QueryParseException("Invalid context variable '" + name + "' for language!", ctx);
-			
+			throw new QueryParseException("Invalid context variable '" + name + "' for language!",
+				ctx);
+
 		}
 
-		RegisterValue contextVar = new RegisterValue(match.get(), value);
+		// Parse value for name
+
+		BigInteger value = null;
+
+		// If we have a quoted string, we're dealing with the NumericUtilities#convertHexStringToMaskedValue(AtomicLong, AtomicLong, String, int, int, String) format
+		if (valueString.startsWith("\"") || valueString.startsWith("'")) {
+			if (!valueString.endsWith(valueString.substring(0, 1))) {
+				throw new QueryParseException("Expected quoted string to end with a matching quote",
+					ctx);
+			}
+
+			String valueStringInner = valueString.substring(0, valueString.length() - 1);
+
+			AssemblyPatternBlock a = AssemblyPatternBlock.fromString(valueStringInner);
+
+			value = new BigInteger(a.getValsAll());
+			BigInteger mask = new BigInteger(a.getMaskAll());
+			contextVar = new RegisterValue(match.get(), value, mask);
+
+		}
+		else {
+			// Else try simpler radix based formats (with no unknown bits)
+			try {
+				if (valueString.length() > 2) {
+					String valuePrefix = valueString.substring(0, 2);
+					if (valuePrefix.equals("0x")) {
+						value = new BigInteger(valueString.substring(2), 16);
+					}
+					else if (valuePrefix.equals("0b")) {
+						value = new BigInteger(valueString.substring(2), 2);
+					}
+				}
+				if (value == null) {
+					value = new BigInteger(valueString);
+				}
+			}
+			catch (NumberFormatException e) {
+				throw new QueryParseException(
+					"Unable to parse context value: '" + valueString +
+						" '. Is it properly prefixed with '0x' for hex, '0b' for binary, or no prefix for base 10?",
+					ctx);
+			}
+
+			contextVar = new RegisterValue(match.get(), value);
+		}
+		
 		System.err.println("Going to set this context variable: " + contextVar);
 		this.contextEntries.put(name, contextVar);
 

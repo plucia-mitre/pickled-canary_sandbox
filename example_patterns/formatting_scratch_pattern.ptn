@@ -58,6 +58,9 @@ bne `*`
 
 cmp `Q2`,#0x0
 `ANY_BYTES{0,4,2}`
+
+`CONTEXT
+aaaa="ab [..10]x XX 12" CONTEXT_END`
 mov `Q1`,#0x200
 
 ; Copyright (C) 2023 The MITRE Corporation All Rights Reserved
