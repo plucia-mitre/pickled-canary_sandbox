@@ -399,10 +399,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 //		this.futureContexts = new HashMap<>();
 		
 		this.contextVisitor = new ContextVisitor();
-//		this.nextContexts = new HashSet<>();
-//		this.asmContextStack = new Stack<>();
-//		this.asmContextOrStack = new Stack<>();
-//		this.outputContext = new PatternContext();
 
 		this.contextEntries = new HashMap<>();
 		
@@ -422,11 +418,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 //		this.futureContexts.clear();
 		
 		this.contextVisitor = new ContextVisitor();
-//		this.asmContextStack.clear();
-//		this.asmContextOrStack.clear();
-//		this.outputContext = new PatternContext();
-		
-		
 		this.contextEntries.clear();
 	}
 
