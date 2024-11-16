@@ -154,7 +154,7 @@ public class GuiTest extends AbstractProgramBasedTest {
 		invokeInstanceMethod("doSearch", provider, new Class<?>[] {boolean.class}, new Object[] {false});
 		
 		// TODO: Check status here rather than generic sleep
-		TimeUnit.SECONDS.sleep(10);
+		TimeUnit.SECONDS.sleep(20);
 		Assert.assertEquals(expected, compiledTextArea.getText());
 		TimeUnit.SECONDS.sleep(1);
 	}

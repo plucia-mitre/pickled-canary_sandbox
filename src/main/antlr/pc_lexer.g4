@@ -64,6 +64,7 @@ CONTEXT_VALUE:
 		('0x' [0-9a-fA-F]+)
 		| [0-9]+
 		| '0b' [01]+
+		| (["'] [0-9a-fA-FxX .[\]]+ ["'])
 	);
 CONTEXT_NEWLINE: [ \t]* [\n\r]+;
 WHITESPACE: [ \t]+;

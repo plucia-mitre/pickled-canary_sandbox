@@ -327,12 +327,14 @@ Matches some number of bytes regardless of the bytes' value(s).
 
 `` `ANY_BYTES{MIN,MAX,INTERVAL}` `` where `MIN` is the minimum number of bytes
 to match and `MAX` is the maximum number of bytes to match (inclusive). `MIN`
-and `MAX` can be the same number to match that specific number of bytes.  
-`INTERVAL` is the amount of bytes stepped in each iteration. It is an
+and `MAX` can be the same number to match that specific number of bytes.
+`INTERVAL` is the number of bytes stepped in each iteration. It is an
 **optional** argument and the default value is 1.  
 **Example:**  
 `ANY_BYTES{2,5,1}` can also be written as `ANY_BYTES{2,5}`  
-`ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3
+`ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3, meaning
+Pickled Canary will search for the next instruction at 3 bytes and 6 bytes after the end
+of the previous instruction.
 
 ### Or Blocks
 

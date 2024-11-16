@@ -19,6 +19,8 @@ import org.mitre.pickledcanary.headless.*;
 		ArmLePickledCanaryTest.class,
 		ArmThumbLePickledCanaryTest.class,
 		BitArrayTest.class,
+		ContextTest.class,
+		ExpressionSolverTest.class,
 		MipsBePickledCanaryTest.class,
 		MipsLePickledCanaryTest.class,
 		MiscTest.class,

@@ -158,7 +158,7 @@ public class LookupDataExpressionSolver {
 	 * Compare with "getContextBytes" in
 	 * ghidra.app.plugin.processors.sleigh.expression.ContextField
 	 */
-	private static long getContextBytes(ContextField cf, int[] context, int sp) throws MemoryAccessException {
+	private static long getContextBytes(ContextField cf, int[] context, int sp) {
 		long res = 0;
 		int tmp;
 		int size;
@@ -180,17 +180,13 @@ public class LookupDataExpressionSolver {
 		return res;
 	}
 
-	private static long computeContextFieldExpression(ContextField cf, int[] context, int sp) {
-		// This seems to be almost the same thing as a TokenField... what's actually the
-		// difference?
-		// TODO: is this implemented correctly? Should we be reading something else
-		// here?
+	/** 
+	 * Similar to TokenField, but reads from context rather than from memory
+	 */
+	private static long computeContextFieldExpression(ContextField cf, int[] context, int sp) { 
 		long res;
-		try {
 			res = getContextBytes(cf, context, sp);
-		} catch (MemoryAccessException e) {
-			throw new ExpressionMemoryAccessException(cf, e);
-		}
+	
 
 		res >>= cf.getShift();
 		if (cf.hasSignbit())
