@@ -48,19 +48,19 @@ cmp `Q2`,#0x0
 mov `Q1`,#0x200
 
 
-`CONTEXT asdf=1 ; bbb = 2 CONTEXT_END`
+`CONTEXT asdf=1 ; bbb = 2`
 cmp r1,#0x0
 `CONTEXT
-aaaa=0x22 CONTEXT_END`
+aaaa=0x22 `
 bne `*`
 
-`CONTEXT asdf=44 CONTEXT_END`
+`CONTEXT asdf=44`
 
 cmp `Q2`,#0x0
 `ANY_BYTES{0,4,2}`
 
 `CONTEXT
-aaaa="ab [..10]x XX 12" CONTEXT_END`
+aaaa="ab [..10]x XX 12"`
 mov `Q1`,#0x200
 
 ; Copyright (C) 2023 The MITRE Corporation All Rights Reserved

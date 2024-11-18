@@ -52,7 +52,7 @@ public class ContextTest extends PickledCanaryTest {
 			"Shift R1, R1\r\n"
 			+ "`CONTEXT\r\n"
 			+ "set = 1\r\n"
-			+ "END_CONTEXT`\r\n"
+			+ "`\r\n"
 			+ "`ANY_BYTES{2,2}`\r\n"
 			+ "Shift R1, R1";
 

@@ -17,15 +17,15 @@ line:
 	| instruction
 	| meta;
 
-pc_command: TICK pc_command_body EXIT_TICK;
+// Context consumes the EXIT_TICK to exit its 'pushMode' so we can't have it expect an EXIT_TICK here too
+pc_command: TICK ((pc_command_body EXIT_TICK) | context);
 
 pc_command_body:
 	byte_match
 	| byte_string
 	| masked_byte
 	| any_bytes
-	| label
-	| context;
+	| label;
 
 byte_match: BYTE_PREFIX byte;
 byte_string: BYTE_STRING;
