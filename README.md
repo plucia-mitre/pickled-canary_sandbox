@@ -51,7 +51,7 @@ Scripts](#ghidra-scripts).
 
 ### GUI
 
-With the Pickled Canary Ghidra Plugin installed, a `Search` > `Pickled Canary Pattern` 
+With the Pickled Canary Ghidra Plugin installed, a `Search` > `Pickled Canary Pattern`
 menu option is available.
 
 > **Tip:** Selecting a range of instructions before opening the GUI will
@@ -72,8 +72,7 @@ can be saved using the Save (![Save](docs/disk.png "Save")) or Save As
 The "Compiled" tab shows the JSON encoding of the currently compiled pattern
 (use `Ctl-Enter` in the pattern editor to recompile the pattern). The "Save
 Compiled Pattern As" (![SaveCompiledAs](docs/SaveCompiledAs.png "Save Compiled
-Pattern As")) or "Save Compiled Pattern" (![SaveCompiled](docs/SaveCompiled.png
-"Save Compiled Pattern")) buttons can be used to save the compiled pattern to a
+Pattern As")) or "Save Compiled Pattern" (![SaveCompiled](docs/SaveCompiled.png "Save Compiled Pattern")) buttons can be used to save the compiled pattern to a
 JSON file for use in the [Rust search tool](#rust-search-tool).
 
 > **Tip:** Be sure to ensure the pattern has finished being compiled (no more
@@ -111,9 +110,10 @@ If the extension still seems to be installed:
 ## Ghidra Development Setup
 
 Requirements:
-* An existing installation of Ghidra v11.1 or newer
-* JDK 17 or newer
-* Gradle 8.0 or newer
+
+- An existing installation of Ghidra v11.1 or newer
+- JDK 17 or newer
+- Gradle 8.0 or newer
 
 #### Development with Eclipse
 
@@ -125,17 +125,17 @@ Requirements:
    cloned copy of this repository, and click `Finish`
 1. In the Eclipse `Package Explorer`:
    1. Right click on the newly created project and choose `GhidraDev` > `Link
-      Ghidra...` and choose your Ghidra installation.
+Ghidra...` and choose your Ghidra installation.
    1. Right click on `lib` > `json-20230618.jar` and choose `Build Path` > `Add
-      to Build Path`
-   1. Right click on `lib` > `antlr4-runtime-4.13.1.jar` and choose 
+to Build Path`
+   1. Right click on `lib` > `antlr4-runtime-4.13.1.jar` and choose
       `Build Path` > `Add to Build Path`
    1. Right click on `src/test/java` and choose `Build Path` > `Use as Source
-      Folder`
+Folder`
    1. Right click on `src/test/resources` and choose `Build Path` > `Use as Source
-      Folder`
+Folder`
    1. Right click on `generated-src/antlr/main/java` and choose `Build Path` > `Use
-      as Source Folder`
+as Source Folder`
 1. To run the code, click the green run button and select "Ghidra" as the run configuration, then click "OK".
 
 #### Development without Eclipse
@@ -348,8 +348,7 @@ or block**
 Start the or block with `` `START_OR {` `` then include
 [instructions](#instructions) or [command blocks](#command-blocks) as usual. At
 the end of the first option, add a `` `} OR {` `` followed by the second set of
-[instructions](#instructions) or [command blocks](#command-blocks). Another ``
-`} OR {` `` can be added followed by an additional option, and so on. Finally,
+[instructions](#instructions) or [command blocks](#command-blocks). Another `` `} OR {` `` can be added followed by an additional option, and so on. Finally,
 end with an `` `} END_OR` ``.
 
 For example, the following pattern matches `0xAA` followed by either `0xBB 0xCC`
@@ -428,18 +427,18 @@ format: `` `NAME/FILTER` `` where:
     the wildcard.
     - When a filter is specified, Ghidra's "expected" tokens are filtered to
       only include tokens which match the `FILTER` regular expression.
-    - Examples: 
+    - Examples:
       - `.*` to match any value
       - `r[0-9]` to match only registers `r0` through `r9`.
     - This type of filter does NOT apply on numeric values of a wildcard.
   - A bracketed, comma separated, set of ranges specifying valid numeric values
     for a wildcard.
-    - Examples: 
+    - Examples:
       - `[0..10]` to match the numeric values 0 through 10.
       - `[-0x4..0x4,10..20]` to match the numeric values -4 through 4 or 10
-      through 20. 
+        through 20.
       - `[..]` to match all numeric values (but not register or other
-      string-specified values).
+        string-specified values).
   - NOTE: Starting in v0.1.0 filters must be separately specified for each
     instance of a wildcard. In other words, filters are no longer inherited from
     the first use of a given wildcard name. This is mostly important for search
@@ -474,7 +473,7 @@ beq a0,zero,`:mylabel`
 sw zero,0x104(s2)
 ```
 
-> **_WARNING_**
+> [!WARNING]
 >
 > If the math required to compute the value of a label in an instruction
 > involves computation based on an address (say the start or end address of the
