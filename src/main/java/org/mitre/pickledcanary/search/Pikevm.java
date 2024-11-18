@@ -36,6 +36,8 @@ public class Pikevm {
 	protected final MemBuffer input;
 	protected final TaskMonitor monitor;
 	protected final boolean doDotStar;
+	protected int sp = 0;
+	protected int spOfLastAddedThread = -1;
 
 	public Pikevm(Pattern pattern, MemBuffer input, TaskMonitor monitor) {
 		this.states = new PikevmStates();
@@ -63,16 +65,20 @@ public class Pikevm {
 
 	/**
 	 * Execute this pikevm with the parameters supplied on creation.
+	 * 
+	 * If called multiple times, subsequent calls will resume searching with the state left behind
+	 * after the previous match (e.g. searching will continue as if the previously obtained match
+	 * was not a match)
 	 *
 	 * @return
 	 * @throws MemoryAccessException
 	 */
 	public SavedData run() {
 		long startingMonitorValue = this.monitor.getProgress();
-		int sp = 0;
-		
-		if (!this.doDotStar) {
+
+		if (!this.doDotStar && spOfLastAddedThread != sp) {
 			this.addThread(sp, 0, new SavedData());
+			spOfLastAddedThread = sp;
 		}
 		// This will throw an exception when it reaches the end
 		while (true) {
@@ -84,11 +90,12 @@ public class Pikevm {
 			if (sp % 0x1000 == 0) {
 				monitor.setProgress(startingMonitorValue + sp);
 			}
-			
-			if (this.doDotStar) {
+
+			if (this.doDotStar && spOfLastAddedThread != sp) {
 				SavedData s = new SavedData();
 				s.start = sp;
 				curPikevmThread = new PikevmThread(4, s);
+				spOfLastAddedThread = sp;
 			}
 
 			// bail when we've reached one past the end of our readable bytes.
@@ -111,7 +118,7 @@ public class Pikevm {
 
 				SavedData result;
 				try {
-					result = this.processThread(sp, curPikevmThread);
+					result = this.processThread(curPikevmThread);
 				} catch (MemoryAccessException e) {
 					curPikevmThread = null;
 					continue;
@@ -133,31 +140,31 @@ public class Pikevm {
 	 * This pre-processes non-blocking steps to preserve match priority (e.g. this
 	 * follows all splits and jmps and creates threads for all the destinations)
 	 * 
-	 * @param sp
+	 * @param spNext
 	 * @param pc
 	 * @param saved
 	 */
-	private void addThread(int sp, int pc, SavedData saved) {
+	private void addThread(int spNext, int pc, SavedData saved) {
 		Step curStep = this.pattern.steps.get(pc);
 		if (curStep instanceof Jmp jmp) {
-			this.addThread(sp, jmp.getDest(), saved);
+			this.addThread(spNext, jmp.getDest(), saved);
 		} else if (curStep instanceof Split split) {
-			this.addThread(sp, split.getDest1(), new SavedData(saved));
-			this.addThread(sp, split.getDest2(), saved);
+			this.addThread(spNext, split.getDest1(), new SavedData(saved));
+			this.addThread(spNext, split.getDest2(), saved);
 		} else if (curStep instanceof SplitMulti splitMulti) {
 			for (int dest : splitMulti.getDests()) {
-				this.addThread(sp, dest, new SavedData(saved));
+				this.addThread(spNext, dest, new SavedData(saved));
 			}
 		} else if (curStep instanceof SaveStart) {
-			saved.start = sp;
-			this.addThread(sp, pc + 1, saved);
+			saved.start = spNext;
+			this.addThread(spNext, pc + 1, saved);
 		} else if (curStep instanceof Label label) {
 			SavedData newSavedData = new SavedData(saved);
-			if (newSavedData.addOrFail(label.getValue(), input.getAddress().add(sp).getUnsignedOffset())) {
-				this.addThread(sp, pc + 1, newSavedData);
+			if (newSavedData.addOrFail(label.getValue(), input.getAddress().add(spNext).getUnsignedOffset())) {
+				this.addThread(spNext, pc + 1, newSavedData);
 			}
 		} else {
-			this.states.add(sp, new PikevmThread(pc, saved));
+			this.states.add(spNext, new PikevmThread(pc, saved));
 		}
 	}
 
@@ -165,12 +172,11 @@ public class Pikevm {
 	 * Process a thread with the given parameters, adding additional threads to
 	 * <code>this.states</code> to be processed later if necessary.
 	 * 
-	 * @param sp
 	 * @param pikevmThread
 	 * @return A Result if a match is found, null otherwise.
 	 * @throws MemoryAccessException
 	 */
-	private SavedData processThread(int sp, PikevmThread pikevmThread) throws MemoryAccessException {
+	private SavedData processThread(PikevmThread pikevmThread) throws MemoryAccessException {
 		int pc = pikevmThread.pc();
 		SavedData saved = pikevmThread.saved();
 		Step curStep = this.pattern.steps.get(pc);

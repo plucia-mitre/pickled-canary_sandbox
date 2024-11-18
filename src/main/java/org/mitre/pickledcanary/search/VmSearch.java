@@ -32,7 +32,8 @@ public class VmSearch {
 	}
 
 	/**
-	 * Finds the first match in the given buf which starts at address start
+	 * Finds the first match in the given buf which starts at address start (and only the first
+	 * match)
 	 */
 	SavedDataAddresses runBuf(TaskMonitor monitor, MemBuffer buf, Address start) {
 		Pikevm vm = new Pikevm(pattern, buf, monitor);
@@ -49,7 +50,6 @@ public class VmSearch {
 	public SavedDataAddresses run(TaskMonitor monitor) {
 
 		for (AddressRange range : this.memory.getAddressRanges()) {
-
 			if (monitor.isCancelled()) {
 				return null;
 			}
@@ -65,28 +65,23 @@ public class VmSearch {
 	 */
 	public List<SavedDataAddresses> runAll(TaskMonitor monitor) {
 		List<SavedDataAddresses> out = new LinkedList<>();
-		for (AddressRange range : this.memory.getAddressRanges()) {
 
+		for (AddressRange range : this.memory.getAddressRanges()) {
 			if (monitor.isCancelled()) {
 				return null;
 			}
 
 			Address start = range.getMinAddress();
-
+			MemBuffer buf = new MemoryBufferImpl(this.memory, start);
+			Pikevm vm = new Pikevm(pattern, buf, monitor);
 			while (true) {
-
-				MemBuffer buf = new MemoryBufferImpl(this.memory, start);
-				SavedDataAddresses rangeOut = runBuf(monitor, buf, start);
-				if (rangeOut == null) {
+				SavedData result = vm.run();
+				if (result != null) {
+					out.add(new SavedDataAddresses(result, start));
+				}
+				else {
 					break;
 				}
-				out.add(rangeOut);
-
-				start = rangeOut.getStart().next();
-				if (start == null) {
-					break;
-				}
-
 			}
 		}
 		return out;
@@ -115,25 +110,20 @@ public class VmSearch {
 			monitor.setMessage("Searching memory range " + currentRangeNumber + " of " + totalRanges);
 
 			Address start = range.getMinAddress();
-
+			MemBuffer buf = new MemoryBufferImpl(this.memory, start);
+			Pikevm vm = new Pikevm(pattern, buf, monitor);
 			while (true) {
-
-				MemBuffer buf = new MemoryBufferImpl(this.memory, start);
-				SavedDataAddresses rangeOut = runBuf(monitor, buf, start);
-				if (rangeOut == null) {
+				SavedData result = vm.run();
+				if (result != null) {
+					var a = new SavedDataAddresses(result, start);
+					accumulator.add(a);
+					totalSearched += a.getStart().subtract(start);
+					monitor.setProgress(totalSearched);
+				}
+				else {
 					break;
 				}
-				accumulator.add(rangeOut);
-				
-				totalSearched += rangeOut.getStart().subtract(start);
-				monitor.setProgress(totalSearched);
 
-				start = rangeOut.getStart().next();
-				if (start == null) {
-					break;
-				}
- 
-				monitor.setMessage("Searching memory range " + currentRangeNumber + " of " + totalRanges);
 				if (monitor.isCancelled()) {
 					return;
 				}

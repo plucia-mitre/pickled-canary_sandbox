@@ -389,12 +389,20 @@ public class ArmLePickledCanaryTest extends PickledCanaryTest {
 
 		// The following assertions fail with the current search implementation
 		// Only one match is reported, even though we expect two
-		//Assert.assertEquals(2, results.size());
+		Assert.assertEquals(2, results.size());
 
-		//Assert.assertEquals(this.program.getMinAddress().add(bOffset), results.get(0).getStart());
-		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 4), results.get(1).getStart());
+		Assert.assertEquals(this.program.getMinAddress().add(bOffset + 4), results.get(0).getStart());
+		Assert.assertEquals(this.program.getMinAddress().add(bOffset), results.get(1).getStart());
 
-		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 12), results.get(0).labels().get("foobar"));
-		//Assert.assertEquals(this.program.getMinAddress().add(bOffset + 8), results.get(1).labels().get("foobar"));
+		Assert.assertEquals(this.program.getMinAddress().add(bOffset + 8), results.get(0).labels().get("foobar"));
+		Assert.assertEquals(this.program.getMinAddress().add(bOffset + 12), results.get(1).labels().get("foobar"));
+		
+
+		// Just check this for completeness
+		List<String> testQueryPatternExpected = new ArrayList<>();
+		testQueryPatternExpected.add("{\"tables\":[" + tablesForAddressWildcardConstraintPattern + "],\"steps\":["
+				+ stepsForAddressWildcardConstraintPattern + "],\"compile_info\":[],\"pattern_metadata\":{}}");
+
+		generatePatternTestHelper(addressWildcardConstraintPattern, testQueryPatternExpected, true);
 	}
 }
