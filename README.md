@@ -1,30 +1,30 @@
-# PickledCanary
+# Pickled Canary
 
 **Assembly-based binary pattern search!**
 
 ![alt text](docs/Overview.png "System Overview")
 
 - Start with a known vulnerability and known vulnerable binary (or even better,
-  binaries)
+  binaries).
 - Capture the vulnerability behavior in an [assembly-language based
-  pattern](#pattern-language)
+  pattern](#pattern-language).
   - Use the [Pickled Canary VS Code Extension](#vs-code-extension) for syntax
-    highlighting while writing a pattern
-- Compile the pattern using our [Ghidra plugin](#ghidra-plugin)
+    highlighting while writing a pattern.
+- Compile the pattern using our [Ghidra plugin](#ghidra-plugin).
   - This translates assembly into an [efficient binary
     format](#compiled-pattern-language) which encompasses all the possible
-    binary encodings for each instruction
+    binary encodings for each instruction.
 - Use our [Rust search tool](#rust-search-tool) to quickly find the pattern in
   many binaries!
-  - Alternatively, use our [Python library](#python-library)
+  - Alternatively, use our [Python library](#python-library).
 
 # Repository Structure
 
 This repository contains all aspects of Pickled Canary including:
 
-- The Ghidra Plugin
-- The Rust search tool - with Python bindings
-- The Pickled Canary syntax highlighting plugin for VS Code
+- The Ghidra Plugin.
+- The Rust search tool - with Python bindings.
+- The Pickled Canary syntax highlighting plugin for VS Code.
 
 The location and installation instructions for each of these are described in
 their respective sections below.
@@ -33,16 +33,18 @@ their respective sections below.
 
 ## Download
 
-Pre-built binaries are coming soon!
+Download the ZIP file on the Releases page. The ZIP file contains Ghidra
+Extensions for several versions of Ghidra.
 
 ## Install
 
 Install just like any other Ghidra extension:
 
-1. Click `File` > `Install Extensions...`
-1. Click the green plus sign and choose the downloaded file
-1. Make sure the checkbox next to the new extension is checked
-1. Restart Ghidra
+1. Click `File` > `Install Extensions...`.
+1. Click the green plus sign, and choose the Pickled Canary Ghidra Extension
+   for your version of Ghidra.
+1. Make sure the checkbox next to the new extension is checked.
+1. Restart Ghidra.
 
 ## Run
 
@@ -54,14 +56,14 @@ Scripts](#ghidra-scripts).
 With the Pickled Canary Ghidra Plugin installed, a `Search` > `Pickled Canary Pattern` 
 menu option is available.
 
-> **Tip:** Selecting a range of instructions before opening the GUI will
-> pre-populate those instructions into the pattern input box.
+> **Tip:** Selecting a range of instructions in the Listing View before opening
+> the GUI will pre-populate those instructions into the pattern input box.
 
 ![alt text](docs/PC_GUI.png "Pickled Canary GUI Screenshot")
 
-Enter a pattern on the left side of the GUI and then press `Ctl-Enter` or press
-the ![Reload](docs/reload3.png "Reload Icon") reload icon to compile and search
-for the pattern. Results are listed in the table on the right side. Selecting a
+Enter a pattern on the left side of the GUI and then press `Ctl-Enter` or the
+![Reload](docs/reload3.png "Reload Icon") reload icon to compile and search for
+the pattern. Results are listed in the table on the right side. Selecting a
 result will jump to that address in the binary.
 
 An existing pattern can be loaded into the GUI using the
@@ -76,9 +78,8 @@ Pattern As")) or "Save Compiled Pattern" (![SaveCompiled](docs/SaveCompiled.png
 "Save Compiled Pattern")) buttons can be used to save the compiled pattern to a
 JSON file for use in the [Rust search tool](#rust-search-tool).
 
-> **Tip:** Be sure to ensure the pattern has finished being compiled (no more
-> progress bar shown under the "results" tab) before saving the compiled
-> pattern.
+> **Tip:** Ensure the pattern has finished compilation (no more progress bar
+> shown under the "Results" tab) before saving the compiled pattern.
 
 ### Ghidra Scripts
 
@@ -86,26 +87,27 @@ There are two included Ghidra scripts, both are available in Ghidra's script
 manager:
 
 1. `AssemblePattern` - Compiles a pattern for execution in the [Rust search
-   tool](#rust-search-tool)
+   tool](#rust-search-tool).
 2. `AssembleAndRunPattern` - Compiles a pattern and executes it within Ghidra,
    highlighting matches.
-   > **Tip:** These scripts can be copied/modified to behave differently (e.g.
-   > to add bookmarks to each match rather than highlighting)
+   
+> **Tip:** These scripts can be copied/modified to behave differently (e.g. to
+> add bookmarks to each match rather than highlighting).
 
 ## Uninstall
 
 To uninstall the current Pickled Canary extension (to install a new version, for
 example):
 
-1. Click `File` > `Install Extensions...`
-1. Uncheck the box next to the "pc" extension
-1. Restart Ghidra
+1. Click `File` > `Install Extensions...`.
+1. Uncheck the box next to the "PickledCanary" extension.
+1. Restart Ghidra.
 
 If the extension still seems to be installed:
 
-1. Ensure that Ghidra is not running (AT ALL)
-1. Delete the "pc" folder (may have a variation of this name) in:
-   - Windows: `C:\Users\USERNAME\.ghidra\GHIDRA_VERSION\Extensions\`
+1. Ensure that Ghidra is not running (AT ALL).
+1. Delete the "pickled-canary" folder (may have a variation of this name) in:
+   - Windows: `C:\Users\USERNAME\AppData\Roaming\ghidra\GHIDRA_VERSION\Extensions\`
    - Linux: `~/.ghidra/GHIDRA_VERSION/Extensions/`
 
 ## Ghidra Development Setup
@@ -117,25 +119,25 @@ Requirements:
 
 #### Development with Eclipse
 
-1. Clone this repository
+1. Clone this repository.
 1. If you were previously developing outside of Eclipse, `rm -rf` the `build` directory.
-1. Generate the Antlr derived source code by running: `gradle generateGrammarSource`
-1. Open Eclipse (with Ghidra Dev Tools already installed)
-1. In Eclipse click `File` > `Open Projects from File System...`, chose the
-   cloned copy of this repository, and click `Finish`
+1. Generate the Antlr derived source code by running: `gradle generateGrammarSource`.
+1. Open Eclipse (with [GhidraDev](https://github.com/NationalSecurityAgency/ghidra/blob/master/GhidraBuild/EclipsePlugins/GhidraDev/GhidraDevPlugin/README.md) already installed).
+1. In Eclipse, click `File` > `Open Projects from File System...`, chose the
+   cloned copy of this repository, and click `Finish`.
 1. In the Eclipse `Package Explorer`:
-   1. Right click on the newly created project and choose `GhidraDev` > `Link
-      Ghidra...` and choose your Ghidra installation.
+   1. Right click on the newly created project, choose `GhidraDev` > `Link
+      Ghidra...`, and choose your Ghidra installation.
    1. Right click on `lib` > `json-20230618.jar` and choose `Build Path` > `Add
-      to Build Path`
+      to Build Path`.
    1. Right click on `lib` > `antlr4-runtime-4.13.1.jar` and choose 
-      `Build Path` > `Add to Build Path`
+      `Build Path` > `Add to Build Path`.
    1. Right click on `src/test/java` and choose `Build Path` > `Use as Source
-      Folder`
+      Folder`.
    1. Right click on `src/test/resources` and choose `Build Path` > `Use as Source
-      Folder`
+      Folder`.
    1. Right click on `generated-src/antlr/main/java` and choose `Build Path` > `Use
-      as Source Folder`
+      as Source Folder`.
 1. To run the code, click the green run button and select "Ghidra" as the run configuration, then click "OK".
 
 #### Development without Eclipse
@@ -143,7 +145,7 @@ Requirements:
 1. Clone this repository.
 2. Set the `GHIDRA_INSTALL_DIR` environment variable to the path of the Ghidra installation on your computer.
 3. Import the directory into to your favorite Java IDE as a Gradle project. Make sure to set the `GHIDRA_INSTALL_DIR` environment variable for any run configurations you add.
-4. To build the extension, run the `buildExtension` Gradle task. (i.e. `gradle buildExtension`)
+4. To build the extension, run the `buildExtension` Gradle task (i.e. `gradle buildExtension`).
 5. The compiled extension will be created at `dist/ghidra_%VERSION%_PUBLIC_%DATE%_pickled-canary.zip`.
 6. Follow the installation instructions above to install the new extension file.
 
@@ -154,7 +156,7 @@ our [DFA](#compiled-pattern-language) and a wrapper binary which uses this
 library to search one or more binary files for provided patterns.
 
 This tool is currently called `treesearchtool`. This tool can be compiled with
-the nightly rust compiler and more help on specific options is available by
+the nightly rust compiler, and more help on specific options is available by
 running with `-h`.
 
 **TODO:** More documentation about the specifics of this tool (once it's
@@ -162,9 +164,10 @@ finalized a bit more).
 
 ## Download
 
-The pre-built `treesearchtool` may be downloaded from the Releases Page
-(**Coming soon**). The search tool should be from the same release as was used
-to compile your patterns.
+The pre-built `treesearchtool` is located in the ZIP file found on the Releases
+page. Once the file is unzipped, open the `pickled_canary_rust_tools` directory
+to find the search tool. The search tool should be from the same release as was
+used to compile your patterns.
 
 # Python Library
 
@@ -176,7 +179,7 @@ search behavior of Pickled Canary.
 After installing (see below), simply do something like:
 
 ```python
-from pickeled_canary import PatternOffsetResults
+from pickled_canary import PatternOffsetResults
 pattern_str = """{"tables":[],"steps":[{"type":"BYTE","value":116},{"type":"BYTE","value":102},{"type":"BYTE","value":116},{"type":"BYTE","value":112},{"type":"BYTE","value":95},{"type":"BYTE","value":114},{"type":"BYTE","value":120},{"type":"MATCH"}]}"""
 test_data = b"aaatftp_rxddtftp_rxasdfasdf"
 
@@ -188,7 +191,7 @@ If you don't want to pre-search the entire target binary, you can use the
 following code to search one result at a time:
 
 ```python
-from pickeled_canary import LazyPatternOffsetResults
+from pickled_canary import LazyPatternOffsetResults
 pattern_str = """{"tables":[],"steps":[{"type":"BYTE","value":116},{"type":"BYTE","value":102},{"type":"BYTE","value":116},{"type":"BYTE","value":112},{"type":"BYTE","value":95},{"type":"BYTE","value":114},{"type":"BYTE","value":120},{"type":"MATCH"}]}"""
 test_data = b"aaatftp_rxddtftp_rxasdfasdf"
 
@@ -199,13 +202,13 @@ second_result = next(lazy)
 # etc...
 ```
 
-## Library installation
+## Library Installation
 
-For non-development work on Linux you can download and install a pre-built wheel
-matching your python version from the Releases Page (**Coming soon**).
+For non-development work on Linux, you can download and install a pre-built wheel
+matching your Python version from the Releases page (**Coming soon**).
 
 You can try the "manylinux" version (from the same download location) if the
-shorter-filename version doesn't work.
+shorter filename version doesn't work.
 
 For Windows or Mac computers with "Apple Silicon", please follow the Development
 instructions below.
@@ -213,19 +216,19 @@ instructions below.
 ## Development
 
 Follow these instructions to be able to modify the Python code and use the most
-current Rust code (in your workspace) from the python library.
+current Rust code (in your workspace) from the Python library.
 
 > **NOTE:** You'll likely want to make sure you have a virtual environment of
 > some sort set up and in use for this.
 
-In the `search` directory run `pip install --editable .`
+In the `search` directory run `pip install --editable .`.
 
-If you modify the Rust code, you'll need to re-run this pip command so the rust
-is recompiled and re-linked against the python code (you do not need to do this
-for modifications to the python code)
+If you modify the Rust code, you'll need to re-run this pip command so the Rust
+code is recompiled and re-linked against the Python code (you do not need to do
+this for modifications to the Python code).
 
 There are some simple test cases available by running `pytest` (assuming you
-have pytest installed, else first run `pip install pytest`)
+have pytest installed, else first run `pip install pytest`).
 
 # VS Code Extension
 
@@ -234,22 +237,22 @@ provide syntax highlighting for Pickled Canary patterns!
 
 ## Download
 
-You can download the `.vsix` VS Code plugin from the Releases Page (**Coming
+You can download the `.vsix` VS Code plugin from the Releases page (**Coming
 soon**).
 
 ## Install
 
 In VS Code:
 
-1. Open the command palette (`Ctrl`-`Shift`-`P` in Windows)
-1. Type some part of "Extensions: Install from VSIX..." and choose this option
+1. Open the command palette (`Ctrl`-`Shift`-`P` in Windows).
+1. Type some part of "Extensions: Install from VSIX...", and choose this option
    when it appears.
-1. Select the just-downloaded extension
+1. Select the just-downloaded extension.
 
 ## Use
 
 Simply create or open a `.ptn` file to trigger Pickled Canary syntax
-highlighting
+highlighting.
 
 ## Uninstall
 
@@ -264,7 +267,7 @@ directory in this project.
 Leading whitespace is always ignored.
 
 Use the [Pickled Canary VS Code Extension](#vs-code-extension) for syntax
-highlighting while writing a pattern
+highlighting while writing a pattern.
 
 ## Comments
 
@@ -283,15 +286,6 @@ object (e.g.: `{ "key" : "value", "key2": 2 }`). Additionally, there may be
 comment lines (starting with `;`, as usual) which are removed before the meta
 block is parsed as JSON.
 
-## Instructions
-
-Anything other than a [Command Block](#command-blocks) or [Comment](#comments)
-is considered part of an instruction and is passed to Ghidra's autocomplete
-functionality for assembly into binary. This is done line-by-line, possibly
-including [some command blocks](#wildcards). Since Ghidra is processing the
-provided assembly, be sure to use Ghidra's assembly syntax rather than what
-might be found in another tool / the processor manual.
-
 ## Command Blocks
 
 Command blocks are special commands to Pickled Canary which go beyond basic
@@ -309,9 +303,10 @@ Matches the given hex byte.
 `` `=0xXX` `` where `XX` is the hex representation of a byte.
 
 It can also match a given string's respective ASCII bytes. This can be done by
-enclosing the string in double quotes.  
-**Eg:** `` `"string 1"` `` attempts to match the bytes `0x73 0x74 0x72 0x69 0x6E
-0x67 0x20 0x31`
+enclosing the string in double quotes.
+
+**Example:** `` `"string 1"` `` attempts to match the bytes `0x73 0x74 0x72 0x69 0x6E
+0x67 0x20 0x31`.
 
 ### Masked Byte
 
@@ -326,13 +321,14 @@ masked search byte against.
 Matches some number of bytes regardless of the bytes' value(s).
 
 `` `ANY_BYTES{MIN,MAX,INTERVAL}` `` where `MIN` is the minimum number of bytes
-to match and `MAX` is the maximum number of bytes to match (inclusive). `MIN`
+to match, and `MAX` is the maximum number of bytes to match (inclusive). `MIN`
 and `MAX` can be the same number to match that specific number of bytes.
 `INTERVAL` is the number of bytes stepped in each iteration. It is an
-**optional** argument and the default value is 1.  
-**Example:**  
-`ANY_BYTES{2,5,1}` can also be written as `ANY_BYTES{2,5}`  
-`ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3, meaning
+**optional** argument and the default value is 1.
+
+**Examples:**
+* `ANY_BYTES{2,5,1}` can also be written as `ANY_BYTES{2,5}`.
+* `ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3, meaning
 Pickled Canary will search for the next instruction at 3 bytes and 6 bytes after the end
 of the previous instruction.
 
@@ -387,8 +383,8 @@ for the step where they are encountered. This means a single Pickled Canary
 wildcard matches a single token.
 
 To get an idea of what a token is Ghidra's autocompleter can be consulted. To
-manually exercise the autocompleter: right-click on an instruction and choose
-"patch instruction". From there you can edit the instruction and notice the
+manually exercise the autocompleter: right-click on an instruction in the listing view and choose
+"Patch Instruction". From there, you can edit the instruction and notice the
 suggestions provided. Each suggestion represents a complete token (assuming you
 haven't already partially typed the token; if so, only the remaining portion of
 the token is shown).
@@ -409,14 +405,14 @@ format: `` `NAME/FILTER` `` where:
   this wildcard and is used to save the value it represents.
   - Traditionally, this is something like `Q1`, but can also be something more
     descriptive.
-  - If a name is repeated multiple times within the same pattern then all
+  - If a name is repeated multiple times within the same pattern, then all
     instances of that name must contain the same value (e.g.: register, number,
     etc) for the pattern to be a match.
     - Subsequent uses of a name MUST NOT specify a `FILTER`. In subsequent uses
       of a name, the `FILTER` value is reused from the first use of the name.
-  - **TODO:** If `NAME` is `*`, no value will be saved by the rust code, nor
+  - **TODO:** If `NAME` is `*`, no value will be saved by the Rust code, nor
     will this `NAME` be matched against any other wildcards named `*`.
-    - Actually, no extracting of the value will even be performed in rust,
+    - Actually, no extracting of the value will even be performed in Rust,
       making this faster than if a unique name was specified.
       - A unique name may still be desirable if the value of the wildcard is
         important to extract.
@@ -504,7 +500,7 @@ Negative lookahead blocks prevent a match from being found if the pattern
 elements inside them are found. They can be used to ensure that a value is not
 followed by some other value.
 
-Negative lookahead blocks start with a `` `NOT {` `` and end with a `` `} END_NOT` ``
+Negative lookahead blocks start with a `` `NOT {` `` and end with a `` `} END_NOT` ``.
 
 Negative lookaheads must not be used at the very start of a pattern.
 
@@ -530,6 +526,15 @@ which will be reported in the pattern output.
 
 > **Tip:** It's best to stick to alphanumeric labels with underscores to avoid
 > collisions with other Pickled Canary commands (present or future).
+
+
+## Instructions
+Anything other than a [Command Block](#command-blocks), [Metadata Block](#metadata), or [Comment](#comments)
+is considered part of an instruction and is passed to Ghidra's assembler to
+assemble into binary. This is done line-by-line, possibly
+including [some command blocks](#wildcards). Since Ghidra is processing the
+provided assembly, be sure to use Ghidra's assembly syntax rather than what
+might be found in another tool / the processor manual.
 
 # Compiled Pattern Language
 
