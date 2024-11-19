@@ -130,30 +130,36 @@ Requirements:
       Ghidra...`, and choose your Ghidra installation.
    1. Right click on `lib` > `json-20230618.jar` and choose `Build Path` > `Add
       to Build Path`.
-   1. Right click on `lib` > `antlr4-runtime-4.13.1.jar` and choose 
+   1. Right click on `lib` > `antlr4-runtime-4.13.1.jar` and choose
       `Build Path` > `Add to Build Path`.
    1. Right click on `src/test/java` and choose `Build Path` > `Use as Source
       Folder`.
    1. Right click on `src/test/resources` and choose `Build Path` > `Use as Source
       Folder`.
-   1. Right click on `generated-src/antlr/main/java` and choose `Build Path` > `Use
-      as Source Folder`.
-1. To run the code, click the green run button and select "Ghidra" as the run configuration, then click "OK".
+   1. Right click on `generated-src/antlr/main/java` and choose `Build Path` >
+      `Use as Source Folder`.
+1. To run the code, click the green run button and select "Ghidra" as the run
+   configuration, then click "OK".
 
 #### Development without Eclipse
 
 1. Clone this repository.
-2. Set the `GHIDRA_INSTALL_DIR` environment variable to the path of the Ghidra installation on your computer.
-3. Import the directory into to your favorite Java IDE as a Gradle project. Make sure to set the `GHIDRA_INSTALL_DIR` environment variable for any run configurations you add.
-4. To build the extension, run the `buildExtension` Gradle task (i.e. `gradle buildExtension`).
+2. Set the `GHIDRA_INSTALL_DIR` environment variable to the path of the Ghidra
+   installation on your computer.
+3. Import the directory into to your favorite Java IDE as a Gradle project.
+   Make sure to set the `GHIDRA_INSTALL_DIR` environment variable for any run
+   configurations you add.
+4. To build the extension, run the `buildExtension` Gradle task (i.e. `gradle
+   buildExtension`).
 5. The compiled extension will be created at `dist/ghidra_%VERSION%_PUBLIC_%DATE%_pickled-canary.zip`.
-6. Follow the installation instructions above to install the new extension file.
+6. Follow the installation instructions above to install the new extension
+   file.
 
 # Rust Search Tool
 
-The Rust search tool consists of a library containing an Automata for processing
-our [DFA](#compiled-pattern-language) and a wrapper binary which uses this
-library to search one or more binary files for provided patterns.
+The Rust search tool consists of a library containing an Automata for
+processing our [DFA](#compiled-pattern-language) and a wrapper binary which
+uses this library to search one or more binary files for provided patterns.
 
 This tool is currently called `treesearchtool`. This tool can be compiled with
 the nightly rust compiler, and more help on specific options is available by
@@ -204,14 +210,14 @@ second_result = next(lazy)
 
 ## Library Installation
 
-For non-development work on Linux, you can download and install a pre-built wheel
-matching your Python version from the Releases page (**Coming soon**).
+For non-development work on Linux, you can download and install a pre-built
+wheel matching your Python version from the Releases page (**Coming soon**).
 
 You can try the "manylinux" version (from the same download location) if the
 shorter filename version doesn't work.
 
-For Windows or Mac computers with "Apple Silicon", please follow the Development
-instructions below.
+For Windows or Mac computers with "Apple Silicon", please follow the
+Development instructions below.
 
 ## Development
 
@@ -305,8 +311,8 @@ Matches the given hex byte.
 It can also match a given string's respective ASCII bytes. This can be done by
 enclosing the string in double quotes.
 
-**Example:** `` `"string 1"` `` attempts to match the bytes `0x73 0x74 0x72 0x69 0x6E
-0x67 0x20 0x31`.
+**Example:** `` `"string 1"` `` attempts to match the bytes `0x73 0x74 0x72
+0x69 0x6E 0x67 0x20 0x31`.
 
 ### Masked Byte
 
@@ -328,9 +334,9 @@ and `MAX` can be the same number to match that specific number of bytes.
 
 **Examples:**
 * `ANY_BYTES{2,5,1}` can also be written as `ANY_BYTES{2,5}`.
-* `ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3, meaning
-Pickled Canary will search for the next instruction at 3 bytes and 6 bytes after the end
-of the previous instruction.
+* `ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3,
+meaning Pickled Canary will search for the next instruction at 3 bytes and 6
+bytes after the end of the previous instruction.
 
 ### Or Blocks
 
@@ -348,8 +354,8 @@ the end of the first option, add a `` `} OR {` `` followed by the second set of
 `} OR {` `` can be added followed by an additional option, and so on. Finally,
 end with an `` `} END_OR` ``.
 
-For example, the following pattern matches `0xAA` followed by either `0xBB 0xCC`
-or `0x01 0x02` (remember, leading whitespace does not matter):
+For example, the following pattern matches `0xAA` followed by either `0xBB
+0xCC` or `0x01 0x02` (remember, leading whitespace does not matter):
 
 ```
 `=0xAA`
@@ -374,8 +380,8 @@ examples below).
 
 By default, Ghidra's instruction parser first groups the characters of an
 instruction line into tokens, then attempts to match each token against a list
-of possible "expected" tokens. These "expected" tokens are limited to the tokens
-which are valid in this position within the current instruction.
+of possible "expected" tokens. These "expected" tokens are limited to the
+tokens which are valid in this position within the current instruction.
 
 We have worked with the Ghidra team to modify Ghidra's instruction parser to
 think that a Pickled Canary "wildcard" token matches all the "expected" tokens
@@ -383,26 +389,26 @@ for the step where they are encountered. This means a single Pickled Canary
 wildcard matches a single token.
 
 To get an idea of what a token is Ghidra's autocompleter can be consulted. To
-manually exercise the autocompleter: right-click on an instruction in the listing view and choose
-"Patch Instruction". From there, you can edit the instruction and notice the
-suggestions provided. Each suggestion represents a complete token (assuming you
-haven't already partially typed the token; if so, only the remaining portion of
-the token is shown).
+manually exercise the autocompleter: right-click on an instruction in the
+listing view and choose "Patch Instruction". From there, you can edit the
+instruction and notice the suggestions provided. Each suggestion represents a
+complete token (assuming you haven't already partially typed the token; if so,
+only the remaining portion of the token is shown).
 
 #### Wildcard Field vs Scalar
 
-A wildcard token can be either a "field" type or a "scalar" type. A "field" type
-is replaced with a limited set of values, typically registers. A "scalar" type
-is replaced with a number or a label representing a number (most likely in the
-form of an address).
+A wildcard token can be either a "field" type or a "scalar" type. A "field"
+type is replaced with a limited set of values, typically registers. A "scalar"
+type is replaced with a number or a label representing a number (most likely in
+the form of an address).
 
 #### Wildcard Format
 
 A Pickled Canary wildcard consists of a `NAME` and a `FILTER` in the following
 format: `` `NAME/FILTER` `` where:
 
-- `NAME` is an identifier (also occasionally called a "variable" or "label") for
-  this wildcard and is used to save the value it represents.
+- `NAME` is an identifier (also occasionally called a "variable" or "label")
+  for this wildcard and is used to save the value it represents.
   - Traditionally, this is something like `Q1`, but can also be something more
     descriptive.
   - If a name is repeated multiple times within the same pattern, then all
@@ -437,15 +443,16 @@ format: `` `NAME/FILTER` `` where:
       - `[..]` to match all numeric values (but not register or other
       string-specified values).
   - NOTE: Starting in v0.1.0 filters must be separately specified for each
-    instance of a wildcard. In other words, filters are no longer inherited from
-    the first use of a given wildcard name. This is mostly important for search
-    performance where it's likely best to specify filters as often as possible.
+    instance of a wildcard. In other words, filters are no longer inherited
+    from the first use of a given wildcard name. This is mostly important for
+    search performance where it's likely best to specify filters as often as
+    possible.
 - Only `LABEL` is required (although it may be `*`).
 
 #### Address Wildcards
 
-If a wildcard's label starts with a `:` character and it's found to be used as a
-scalar in an instruction Pickled Canary will attempt to compute the address
+If a wildcard's label starts with a `:` character and it's found to be used as
+a scalar in an instruction Pickled Canary will attempt to compute the address
 encoded by the scalar and report/match on that address.
 
 For example, a MIPS `beq` instruction encodes a branch destination as its final
@@ -454,14 +461,14 @@ binary `6` is encoded into the instruction. This is because MIPS specifies that
 the branch destination is calculated as: `((Current branch instruction
 address)+4)+((encoded value)*4)`. Given this, if the wildcard for the branch
 destination operand is specified in Pickled Canary with a label starting with
-`:` then Pickled Canary will calculate this label as an address yielding a value
-of the `beq`'s address plus 28.
+`:` then Pickled Canary will calculate this label as an address yielding a
+value of the `beq`'s address plus 28.
 
 This feature can be used in conjunction with [Labels](#labels) to enforce a
 constraint on the scalar value of a wildcard (e.g.: the destination of a
 branch). For example, the following pattern will only match on `beq`
-instructions which branch to a specific `sw` instruction which must occur within
-40 bytes of the `beq`.
+instructions which branch to a specific `sw` instruction which must occur
+within 40 bytes of the `beq`.
 
 ```
 beq a0,zero,`:mylabel`
@@ -489,9 +496,9 @@ sw zero,0x104(s2)
 
 ### Negative Lookaheads
 
-> **This is an advanced feature which _severely_ impacts performance and may not
-> be supported on all platforms. It is almost always possible to avoid using
-> this feature!**
+> **This is an advanced feature which _severely_ impacts performance and may
+> not be supported on all platforms. It is almost always possible to avoid
+> using this feature!**
 
 > The Ghidra plugin can parse and compile patterns with this feature. However,
 > it cannot currently search for patterns with this feature.
@@ -500,7 +507,8 @@ Negative lookahead blocks prevent a match from being found if the pattern
 elements inside them are found. They can be used to ensure that a value is not
 followed by some other value.
 
-Negative lookahead blocks start with a `` `NOT {` `` and end with a `` `} END_NOT` ``.
+Negative lookahead blocks start with a `` `NOT {` `` and end with a
+`` `} END_NOT` ``.
 
 Negative lookaheads must not be used at the very start of a pattern.
 
@@ -529,12 +537,13 @@ which will be reported in the pattern output.
 
 
 ## Instructions
-Anything other than a [Command Block](#command-blocks), [Metadata Block](#metadata), or [Comment](#comments)
-is considered part of an instruction and is passed to Ghidra's assembler to
-assemble into binary. This is done line-by-line, possibly
-including [some command blocks](#wildcards). Since Ghidra is processing the
-provided assembly, be sure to use Ghidra's assembly syntax rather than what
-might be found in another tool / the processor manual.
+Anything other than a [Command Block](#command-blocks), 
+[Metadata Block](#metadata), or [Comment](#comments) is considered part of an
+instruction and is passed to Ghidra's assembler to assemble into binary. This
+is done line-by-line, possibly including [some command blocks](#wildcards).
+Since Ghidra is processing the provided assembly, be sure to use Ghidra's
+assembly syntax rather than what might be found in another tool / the processor
+manual.
 
 # Compiled Pattern Language
 
