@@ -69,4 +69,4 @@ CONTEXT_VALUE:
 CONTEXT_NEWLINE: [ \t]* [\n\r]+;
 WHITESPACE: [ \t]+;
 SEMICOLON: ';';
-CONTEXT_END: ('CONTEXT_END' | 'END_CONTEXT') -> popMode;
+CONTEXT_END: '`' -> popMode, popMode;

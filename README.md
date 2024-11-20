@@ -336,8 +336,7 @@ or match fastest is placed in the first option of an OR block.**
 Start the OR block with `` `START_OR {` `` then include
 [instructions](#instructions) or [command blocks](#command-blocks) as usual. At
 the end of the first option, add a `` `} OR {` `` followed by the second set of
-[instructions](#instructions) or [command blocks](#command-blocks). Another ``
-`} OR {` `` can be added followed by an additional option, and so on. Finally,
+[instructions](#instructions) or [command blocks](#command-blocks). Another `` `} OR {` `` can be added followed by an additional option, and so on. Finally,
 end with an `` `} END_OR` ``.
 
 For example, the following pattern matches `0xAA` followed by either `0xBB
@@ -422,12 +421,12 @@ A Pickled Canary wildcard consists of a `NAME` and a `FILTER` in the format
     - This type of filter does NOT apply on numeric values of a wildcard.
   - A bracketed, comma-separated, set of ranges specifying valid numeric values
     for a wildcard.
-    - Examples: 
+    - Examples:
       - `[0..10]` to match the numeric values 0 through 10.
       - `[-0x4..0x4,10..20]` to match the numeric values -4 through 4 or 10
-      through 20. 
+        through 20.
       - `[..]` to match all numeric values (but not register or other
-      string-specified values).
+        string-specified values).
   - NOTE: Starting in v0.1.0 filters must be separately specified for each
     instance of a wildcard. In other words, filters are no longer inherited
     from the first use of a given wildcard name. This is mostly important for
@@ -463,7 +462,7 @@ beq a0,zero,`:mylabel`
 sw zero,0x104(s2)
 ```
 
-> **_WARNING_**
+> [!WARNING]
 >
 > If the math required to compute the value of a label in an instruction
 > involves computation based on an address (say the start or end address of the
@@ -479,6 +478,70 @@ sw zero,0x104(s2)
 >
 > The only known way to avoid this issue is to ensure that the binary being
 > searched is aligned in the file the same way it is expected to be running.
+
+### Context
+
+Ghidra uses the concept of "context" in various ways in its assembler and
+disassembler. Generally, it's a way to record state about the system that is not
+memory or a traditional register. Concretely, context in Ghidra is represented
+as a register which is subdivided into smaller named registers. As an example,
+Ghidra uses a `ISA_MIPS` context register to distinguish between MIPS and MIPS16
+modes on a MIPS32 processor. Similarly, a `TMode` register distinguishes between
+ARM Thumb and non-Thumb modes.
+
+By default, Pickled Canary will generate patterns encompassing all possible
+context values for the first instruction, and then ensure that subsequent
+instructions do not have conflicting context requirements. For example, the
+first instruction in an ARM pattern may produce a pattern which could match
+either Thumb or non-Thumb encodings. Depending on which encoding is found in a
+binary, subsequent instructions will match the mode of the first-matched
+instruction.
+
+There are several limitations with Pickled Canary's ability to work with context:
+
+- Pickled Canary has a limited ability to reflect, enforce, and verify context
+  changes which do not occur on the next instruction
+- Pickled Canary has no concept of what context changes may or may not occur in
+  bytes matched with non-instruction commands (such as [Specific
+  Byte](#specific-byte), [Any Byte](#any-byte), etc...)
+
+Pickled Canary provides a special syntax to place constraints on which
+instruction encodings are considered possible based on setting context before an
+instruction. This can also be used to adjust expected context after an
+instruction or after non-instruction commands.
+
+`` `CONTEXT NAME=VALUE` `` where `NAME` is a context variable name
+and `VALUE` is a valid value for that variable specified as:
+
+- A decimal value `Z` where `Z` is some number of decimal digits
+- A hex value `0xZ` where `Z` is some number of hexadecimal digits
+- A binary value `0bZ` where `Z` is some number of binary digits
+- A quoted masked value in Ghidra's `AssemblyPatternBlock` syntax `"Z"` where
+  `Z` is a space separated sequence of:
+  - `AB` where `A` and `B` are:
+    - Hex nibble digits OR
+    - The character `X` for an unspecified nibble IR
+    - `[CCCC]` where C is either:
+      - A binary `1` or `0`
+      - A `x` for an unspecified bit
+
+Multiple context variables and values can be specified in a single `CONTEXT`
+block by separating the values with a `;` character or newlines.
+
+Examples:
+
+- `` `CONTEXT TMode = 1` `` Ensures only Thumb encodings are
+  considered valid for the next instruction in an ARM pattern.
+- `` `CONTEXT TMode = "X"` `` Ensures both Thumb and non-Thumb
+  encodings are considered valid for the next instruction in an ARM pattern.
+- `` `CONTEXT VAR_A = "d1 [x010]5"` `` Ensures the fictitious
+  "VAR_A" context variable is set to 0xd1a5 or 0xd125 for the next instruction
+- `` `CONTEXT VAR_A = "7X X5"` `` Ensures the fictitious "VAR_A" context
+  variable is set to a value with 7 in the first nibble, and a 5 in the last
+  nibble.
+- `` `CONTEXT VAR_A=1 ; VAR_B = 2` `` Ensures that the fictitious "VAR_A" and
+  "VAR_B" context variables are set to 1 and 2 (respectively) for the next
+  instruction
 
 ### Negative Lookaheads
 
