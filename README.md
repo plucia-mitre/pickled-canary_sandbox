@@ -6,13 +6,11 @@
 
 - Start with a known vulnerability and known vulnerable binary (or even better,
   binaries).
-- Capture the vulnerability behavior in an [assembly-language based
+- Capture the vulnerability behavior in an [assembly-language-based
   pattern](#pattern-language).
-  - Use the [Pickled Canary VS Code Extension](#vs-code-extension) for syntax
-    highlighting while writing a pattern.
 - Compile the pattern using our [Ghidra plugin](#ghidra-plugin).
   - This translates assembly into an [efficient binary
-    format](#compiled-pattern-language) which encompasses all the possible
+    format](#compiled-pattern-language), which encompasses all the possible
     binary encodings for each instruction.
 - Use our [Rust search tool](#rust-search-tool) to quickly find the pattern in
   many binaries!
@@ -22,41 +20,53 @@
 
 This repository contains all aspects of Pickled Canary including:
 
-- The Ghidra Plugin.
-- The Rust search tool - with Python bindings.
-- The Pickled Canary syntax highlighting plugin for VS Code.
+- The Ghidra plugin
+- The Rust search tool—with Python bindings
 
 The location and installation instructions for each of these are described in
 their respective sections below.
+
+A summary of the top-level directories of this repository follows:
+
+- `docs/` - directory for the images in this README
+- `example_patterns/` - example Pickled Canary patterns that can be used to find
+  the existence or non-existence of specific CVEs in binaries
+- `ghidra_scripts/` - Ghidra scripts that can be used to run the Pickled Canary
+  compiler and search tools
+- `lib/` - required libraries needed to run the Java portion of Pickled Canary
+- `search/` - source code for the Rust search tool and the Python wrapper around
+  the Rust search tool
+- `src/` - Java source code for the Ghidra plugin containing the pattern
+  compiler and Java search tool
 
 # Ghidra Plugin
 
 ## Download
 
 Download the ZIP file on the Releases page. The ZIP file contains Ghidra
-Extensions for several versions of Ghidra.
+extensions for several versions of Ghidra.
 
 ## Install
 
 Install just like any other Ghidra extension:
 
 1. Click `File` > `Install Extensions...`.
-1. Click the green plus sign, and choose the Pickled Canary Ghidra Extension
+1. Click the green plus sign, and choose the Pickled Canary Ghidra extension
    for your version of Ghidra.
 1. Make sure the checkbox next to the new extension is checked.
 1. Restart Ghidra.
 
 ## Run
 
-The Pickled Canary Ghidra Plugin can be run via the [GUI](#gui) or via [Ghidra
-Scripts](#ghidra-scripts).
+The Pickled Canary Ghidra plugin can be run via the [GUI](#gui) or via [Ghidra
+scripts](#ghidra-scripts).
 
 ### GUI
 
-With the Pickled Canary Ghidra Plugin installed, a `Search` > `Pickled Canary Pattern` 
+With the Pickled Canary Ghidra plugin installed, a `Search` > `Pickled Canary Pattern` 
 menu option is available.
 
-> **Tip:** Selecting a range of instructions in the Listing View before opening
+> **Tip:** Selecting a range of instructions in the listing view before opening
 > the GUI will pre-populate those instructions into the pattern input box.
 
 ![alt text](docs/PC_GUI.png "Pickled Canary GUI Screenshot")
@@ -76,22 +86,22 @@ The "Compiled" tab shows the JSON encoding of the currently compiled pattern
 Compiled Pattern As" (![SaveCompiledAs](docs/SaveCompiledAs.png "Save Compiled
 Pattern As")) or "Save Compiled Pattern" (![SaveCompiled](docs/SaveCompiled.png
 "Save Compiled Pattern")) buttons can be used to save the compiled pattern to a
-JSON file for use in the [Rust search tool](#rust-search-tool).
+JSON file for use in the [Rust search tool](#rust-search-tool). 
 
 > **Tip:** Ensure the pattern has finished compilation (no more progress bar
 > shown under the "Results" tab) before saving the compiled pattern.
 
 ### Ghidra Scripts
 
-There are two included Ghidra scripts, both are available in Ghidra's script
-manager:
+There are two included Ghidra scripts, both of which are available in Ghidra's
+script manager:
 
+1. `AssembleAndRunPattern` - Compiles a pattern and executes it within Ghidra,
+   highlighting matches
 1. `AssemblePattern` - Compiles a pattern for execution in the [Rust search
-   tool](#rust-search-tool).
-2. `AssembleAndRunPattern` - Compiles a pattern and executes it within Ghidra,
-   highlighting matches.
+   tool](#rust-search-tool)
    
-> **Tip:** These scripts can be copied/modified to behave differently (e.g. to
+> **Tip:** These scripts can be copied/modified to behave differently (e.g., to
 > add bookmarks to each match rather than highlighting).
 
 ## Uninstall
@@ -114,14 +124,14 @@ If the extension still seems to be installed:
 
 Requirements:
 * An existing installation of Ghidra v11.1 or newer
-* JDK 17 or newer
+* JDK 17 or newer (Ghidra v11.2 or newer require a minimum of JDK 21)
 * Gradle 8.0 or newer
 
 #### Development with Eclipse
 
 1. Clone this repository.
-1. If you were previously developing outside of Eclipse, `rm -rf` the `build` directory.
-1. Generate the Antlr derived source code by running: `gradle generateGrammarSource`.
+1. If you were previously developing outside of Eclipse, `rm -rf` the `build/` directory.
+1. Generate the ANTLR derived source code by running: `gradle generateGrammarSource`.
 1. Open Eclipse (with [GhidraDev](https://github.com/NationalSecurityAgency/ghidra/blob/master/GhidraBuild/EclipsePlugins/GhidraDev/GhidraDevPlugin/README.md) already installed).
 1. In Eclipse, click `File` > `Open Projects from File System...`, chose the
    cloned copy of this repository, and click `Finish`.
@@ -157,27 +167,29 @@ Requirements:
 
 # Rust Search Tool
 
-The Rust search tool consists of a library containing an Automata for
+The Rust search tool consists of a library containing an automata for
 processing our [DFA](#compiled-pattern-language) and a wrapper binary which
 uses this library to search one or more binary files for provided patterns.
+This tool is more performant than the Java search tool, and it can search
+multiple binaries at once.
 
-This tool is currently called `treesearchtool`. This tool can be compiled with
-the nightly rust compiler, and more help on specific options is available by
-running with `-h`.
+The name of the tool is `treesearchtool`. It can be compiled with the nightly
+Rust compiler, and more help on specific options is available by running with
+`-h`.
 
 **TODO:** More documentation about the specifics of this tool (once it's
 finalized a bit more).
 
 ## Download
 
-The pre-built `treesearchtool` is located in the ZIP file found on the Releases
-page. Once the file is unzipped, open the `pickled_canary_rust_tools` directory
-to find the search tool. The search tool should be from the same release as was
-used to compile your patterns.
+The pre-built `treesearchtool` binary is located in the ZIP file found on the
+Releases page. Once the file is unzipped, open the `pickled_canary_rust_tools/`
+directory to find the search tool. The search tool used should be from the same
+release as was used to compile your patterns.
 
 # Python Library
 
-The Pickled Canary Python library wraps a Rust library which exposes the core
+The Pickled Canary Python library wraps a Rust library, which exposes the core
 search behavior of Pickled Canary.
 
 ## Usage
@@ -224,56 +236,26 @@ Development instructions below.
 Follow these instructions to be able to modify the Python code and use the most
 current Rust code (in your workspace) from the Python library.
 
-> **NOTE:** You'll likely want to make sure you have a virtual environment of
+> **NOTE:** You will likely want to make sure you have a virtual environment of
 > some sort set up and in use for this.
 
-In the `search` directory run `pip install --editable .`.
+In the `search/` directory, run `pip install --editable .`.
 
-If you modify the Rust code, you'll need to re-run this pip command so the Rust
-code is recompiled and re-linked against the Python code (you do not need to do
-this for modifications to the Python code).
+If you modify the Rust code, you will need to rerun this pip command so the
+Rust code is recompiled and relinked against the Python code (you do not need
+to do this for modifications to the Python code).
 
 There are some simple test cases available by running `pytest` (assuming you
 have pytest installed, else first run `pip install pytest`).
 
-# VS Code Extension
-
-A [VS Code](https://code.visualstudio.com/) extension has been created to
-provide syntax highlighting for Pickled Canary patterns!
-
-## Download
-
-You can download the `.vsix` VS Code plugin from the Releases page (**Coming
-soon**).
-
-## Install
-
-In VS Code:
-
-1. Open the command palette (`Ctrl`-`Shift`-`P` in Windows).
-1. Type some part of "Extensions: Install from VSIX...", and choose this option
-   when it appears.
-1. Select the just-downloaded extension.
-
-## Use
-
-Simply create or open a `.ptn` file to trigger Pickled Canary syntax
-highlighting.
-
-## Uninstall
-
-Before installing a new version, uninstall the current version by clicking
-"uninstall" in the "Pickled Canary" entry in the VS Code Extensions list.
+For more information, see the [Python README](search/README_python.md).
 
 # Pattern Language
 
-Examples of our pattern language are available in the `example_patterns`
-directory in this project.
+Examples of our pattern language are available in the `example_patterns/`
+directory in this project. Pattern files end in a `.ptn` extension.
 
 Leading whitespace is always ignored.
-
-Use the [Pickled Canary VS Code Extension](#vs-code-extension) for syntax
-highlighting while writing a pattern.
 
 ## Comments
 
@@ -288,8 +270,8 @@ way.
 
 The meta block starts with `` `META` `` alone on a line. The meta block ends
 with another `` `META` `` alone on a line. Between these two lines is a JSON
-object (e.g.: `{ "key" : "value", "key2": 2 }`). Additionally, there may be
-comment lines (starting with `;`, as usual) which are removed before the meta
+object (e.g., `{ "key": "value", "key2": 2 }`). Additionally, there may be
+comment lines (starting with `;`, as usual), which are removed before the meta
 block is parsed as JSON.
 
 ## Command Blocks
@@ -297,9 +279,10 @@ block is parsed as JSON.
 Command blocks are special commands to Pickled Canary which go beyond basic
 assembly syntax to provide advanced searching capabilities.
 
-All command blocks are surrounded by backtick characters; e.g.: `` `SOMETHING` ``
+All command blocks are surrounded by backtick characters; e.g.,
+`` `SOMETHING` ``.
 
-Command blocks should be included on their own line of the pattern (unless
+Command blocks should be included on their own line in the pattern (unless
 otherwise specified).
 
 ### Specific Byte
@@ -316,11 +299,15 @@ enclosing the string in double quotes.
 
 ### Masked Byte
 
-ANDs the byte being examined with a given mask and compares the result to the
-given byte value. Matches if the masked value matches the given byte value.
+Performs a logical AND on the byte being examined and the given mask. Compares
+the result to the given byte value. Matches if the masked value matches the
+given byte value.
 
 `` `&0xXX=0xYY` `` where `XX` is the mask and `YY` is the value to compare the
 masked search byte against.
+
+**Example:** `` `&0x0F=0x8` `` creates a match if `byte_being_examined & 0x0F
+== 0x8`.
 
 ### Any Byte
 
@@ -330,24 +317,23 @@ Matches some number of bytes regardless of the bytes' value(s).
 to match, and `MAX` is the maximum number of bytes to match (inclusive). `MIN`
 and `MAX` can be the same number to match that specific number of bytes.
 `INTERVAL` is the number of bytes stepped in each iteration. It is an
-**optional** argument and the default value is 1.
+**optional** argument, and its default value is 1.
 
 **Examples:**
-* `ANY_BYTES{2,5,1}` can also be written as `ANY_BYTES{2,5}`.
-* `ANY_BYTES{3,7,3}` steps through the range of (3,7) bytes in intervals of 3,
-meaning Pickled Canary will search for the next instruction at 3 bytes and 6
-bytes after the end of the previous instruction.
+* `` `ANY_BYTES{2,5,1}` `` can also be written as `` `ANY_BYTES{2,5}` ``.
+* `` `ANY_BYTES{3,7,3}` `` steps through the range of (3,7) bytes in intervals
+  of 3, meaning Pickled Canary will search for the next instruction at 3 bytes
+  and 6 bytes after the end of the previous instruction.
 
-### Or Blocks
+### OR Blocks
 
-Or blocks allows one of multiple choices to be matched.
+OR blocks allows one of multiple choices to be matched.
 
-Or options are evaluated in the order they are written in the pattern
-(top-down). **Performance tip: Make sure your
-most-likely-to-fail-or-match-quickly option is placed in the first option of an
-or block**
+OR options are evaluated in the order they are written in the pattern
+(top-down). **Performance tip: Make sure the option that is most likely to fail
+or match fastest is placed in the first option of an OR block.**
 
-Start the or block with `` `START_OR {` `` then include
+Start the OR block with `` `START_OR {` `` then include
 [instructions](#instructions) or [command blocks](#command-blocks) as usual. At
 the end of the first option, add a `` `} OR {` `` followed by the second set of
 [instructions](#instructions) or [command blocks](#command-blocks). Another ``
@@ -379,8 +365,8 @@ examples below).
 #### Wildcard Tokens
 
 By default, Ghidra's instruction parser first groups the characters of an
-instruction line into tokens, then attempts to match each token against a list
-of possible "expected" tokens. These "expected" tokens are limited to the
+instruction line into tokens; it then attempts to match each token against a
+list of possible "expected" tokens. These "expected" tokens are limited to the
 tokens which are valid in this position within the current instruction.
 
 We have worked with the Ghidra team to modify Ghidra's instruction parser to
@@ -389,7 +375,7 @@ for the step where they are encountered. This means a single Pickled Canary
 wildcard matches a single token.
 
 To get an idea of what a token is Ghidra's autocompleter can be consulted. To
-manually exercise the autocompleter: right-click on an instruction in the
+manually exercise the autocompleter, right-click on an instruction in the
 listing view and choose "Patch Instruction". From there, you can edit the
 instruction and notice the suggestions provided. Each suggestion represents a
 complete token (assuming you haven't already partially typed the token; if so,
@@ -400,19 +386,19 @@ only the remaining portion of the token is shown).
 A wildcard token can be either a "field" type or a "scalar" type. A "field"
 type is replaced with a limited set of values, typically registers. A "scalar"
 type is replaced with a number or a label representing a number (most likely in
-the form of an address).
+the form of an address or immediate value).
 
 #### Wildcard Format
 
-A Pickled Canary wildcard consists of a `NAME` and a `FILTER` in the following
-format: `` `NAME/FILTER` `` where:
+A Pickled Canary wildcard consists of a `NAME` and a `FILTER` in the format
+ `` `NAME/FILTER` `` where:
 
 - `NAME` is an identifier (also occasionally called a "variable" or "label")
   for this wildcard and is used to save the value it represents.
-  - Traditionally, this is something like `Q1`, but can also be something more
-    descriptive.
+  - Traditionally, this is something like `Q1`, but it can also be something
+    more descriptive.
   - If a name is repeated multiple times within the same pattern, then all
-    instances of that name must contain the same value (e.g.: register, number,
+    instances of that name must contain the same value (e.g., register, number,
     etc) for the pattern to be a match.
     - Subsequent uses of a name MUST NOT specify a `FILTER`. In subsequent uses
       of a name, the `FILTER` value is reused from the first use of the name.
@@ -429,12 +415,12 @@ format: `` `NAME/FILTER` `` where:
   - A regular expression which must match for every acceptable token value of
     the wildcard.
     - When a filter is specified, Ghidra's "expected" tokens are filtered to
-      only include tokens which match the `FILTER` regular expression.
+      include tokens which match only the `FILTER` regular expression.
     - Examples: 
       - `.*` to match any value
       - `r[0-9]` to match only registers `r0` through `r9`.
     - This type of filter does NOT apply on numeric values of a wildcard.
-  - A bracketed, comma separated, set of ranges specifying valid numeric values
+  - A bracketed, comma-separated, set of ranges specifying valid numeric values
     for a wildcard.
     - Examples: 
       - `[0..10]` to match the numeric values 0 through 10.
@@ -445,14 +431,14 @@ format: `` `NAME/FILTER` `` where:
   - NOTE: Starting in v0.1.0 filters must be separately specified for each
     instance of a wildcard. In other words, filters are no longer inherited
     from the first use of a given wildcard name. This is mostly important for
-    search performance where it's likely best to specify filters as often as
+    search performance where it is likely best to specify filters as often as
     possible.
-- Only `LABEL` is required (although it may be `*`).
+- Only `NAME` is required (although it may be `*`).
 
 #### Address Wildcards
 
-If a wildcard's label starts with a `:` character and it's found to be used as
-a scalar in an instruction Pickled Canary will attempt to compute the address
+If a wildcard's label starts with a `:` character and it is found to be used as
+a scalar in an instruction, Pickled Canary will attempt to compute the address
 encoded by the scalar and report/match on that address.
 
 For example, a MIPS `beq` instruction encodes a branch destination as its final
@@ -461,14 +447,14 @@ binary `6` is encoded into the instruction. This is because MIPS specifies that
 the branch destination is calculated as: `((Current branch instruction
 address)+4)+((encoded value)*4)`. Given this, if the wildcard for the branch
 destination operand is specified in Pickled Canary with a label starting with
-`:` then Pickled Canary will calculate this label as an address yielding a
+`:`, then Pickled Canary will calculate this label as an address yielding a
 value of the `beq`'s address plus 28.
 
 This feature can be used in conjunction with [Labels](#labels) to enforce a
-constraint on the scalar value of a wildcard (e.g.: the destination of a
-branch). For example, the following pattern will only match on `beq`
-instructions which branch to a specific `sw` instruction which must occur
-within 40 bytes of the `beq`.
+constraint on the scalar value of a wildcard (e.g., the destination of a
+branch). For example, the following pattern will match on `beq` instructions
+which branch only to a specific `sw` instruction that must occur within 40
+bytes of the `beq`.
 
 ```
 beq a0,zero,`:mylabel`
@@ -481,18 +467,18 @@ sw zero,0x104(s2)
 >
 > If the math required to compute the value of a label in an instruction
 > involves computation based on an address (say the start or end address of the
-> current instruction), PickledCanary may produce an unexpected result if the
+> current instruction), Pickled Canary may produce an unexpected result if the
 > alignment of the matched bytes does not match the expected alignment of the
 > instruction in an executing binary.
 >
 > For example, if an architecture assumes that an instruction will be four-byte
 > aligned when executing but the instruction is found on another alignment by
-> Pickled Canary (perhaps because of an odd-sized file-header proceeding the
+> Pickled Canary (perhaps because of an oddly-sized file header proceeding the
 > instruction), the calculation of the address referenced by that instruction
 > may be incorrect.
 >
 > The only known way to avoid this issue is to ensure that the binary being
-> searched is aligned in the file the same way it's expected to be running.
+> searched is aligned in the file the same way it is expected to be running.
 
 ### Negative Lookaheads
 
@@ -513,7 +499,7 @@ Negative lookahead blocks start with a `` `NOT {` `` and end with a
 Negative lookaheads must not be used at the very start of a pattern.
 
 Example: The following pattern matches `0x44` followed by any two bytes except
-`0x08 0x34` (in that order) and finally there must be a `0x72`. Notice that the
+`0x08 0x34` (in that order) followed by a `0x72`. Notice that the
 `` `ANY_BYTES{2,2}` `` is needed to match the two bytes because the negative
 lookahead block does not "consume" what it tries to match.
 
@@ -532,18 +518,18 @@ lookahead block does not "consume" what it tries to match.
 `` `SOME_LABEL:` `` where `SOME_LABEL` is a user-specified label, the offset of
 which will be reported in the pattern output.
 
-> **Tip:** It's best to stick to alphanumeric labels with underscores to avoid
+> **Tip:** It is best to stick to alphanumeric labels with underscores to avoid
 > collisions with other Pickled Canary commands (present or future).
 
 
 ## Instructions
-Anything other than a [Command Block](#command-blocks), 
-[Metadata Block](#metadata), or [Comment](#comments) is considered part of an
-instruction and is passed to Ghidra's assembler to assemble into binary. This
-is done line-by-line, possibly including [some command blocks](#wildcards).
-Since Ghidra is processing the provided assembly, be sure to use Ghidra's
-assembly syntax rather than what might be found in another tool / the processor
-manual.
+
+Anything other than a [Command Block](#command-blocks), [Metadata
+Block](#metadata), or [Comment](#comments) is considered part of an instruction
+and is passed to Ghidra's assembler to assemble into binary. This is done
+line-by-line, possibly including [some command blocks](#wildcards). Since
+Ghidra is processing the provided assembly, be sure to use Ghidra's assembly
+syntax rather than what might be found in another tool or the processor manual.
 
 # Compiled Pattern Language
 
