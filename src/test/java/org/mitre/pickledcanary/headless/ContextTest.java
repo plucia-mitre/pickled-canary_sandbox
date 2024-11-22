@@ -26,7 +26,7 @@ public class ContextTest extends PickledCanaryTest {
 
 	private static final String tablesForAmbiguousContextPattern = "{\"R2\":[{\"value\":[1],\"mask\":[15]}],\"R3\":[{\"value\":[2],\"mask\":[15]}],\"R4\":[{\"value\":[3],\"mask\":[15]}],\"R1\":[{\"value\":[0],\"mask\":[15]}]}";
 
-	private static final String stepsForAmbiguousContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
+	private static final String stepsForAmbiguousContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextBasedBranchPattern = 
 			"BranchC `:Q1`\r\n"
@@ -36,7 +36,7 @@ public class ContextTest extends PickledCanaryTest {
 
 	private static final String tablesForContextBasedBranchPattern = "";
 
-	private static final String stepsForContextBasedBranchPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Mult\",\"children\":{\"left\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":true,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}}},\"right\":{\"op\":\"ConstantValue\",\"value\":2}}},\"right\":{\"op\":\"ContextField\",\"value\":{\"bitend\":31,\"shift\":0,\"signbit\":false,\"bitstart\":28,\"byteend\":3,\"bytestart\":3}}}},\"right\":{\"op\":\"EndInstructionValue\"}}},\"var_id\":\":Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"context\":[2],\"value\":[0,14]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 0 End: 4 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{0,4}`\",\"min\":0,\"max\":4,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"type\":\"LABEL\",\"value\":\"Q1\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
+	private static final String stepsForContextBasedBranchPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Mult\",\"children\":{\"left\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":true,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}}},\"right\":{\"op\":\"ConstantValue\",\"value\":2}}},\"right\":{\"op\":\"ContextField\",\"value\":{\"bitend\":31,\"shift\":0,\"signbit\":false,\"bitstart\":28,\"byteend\":3,\"bytestart\":3}}}},\"right\":{\"op\":\"EndInstructionValue\"}}},\"var_id\":\":Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"context\":[2,0],\"value\":[0,14]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 0 End: 4 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{0,4}`\",\"min\":0,\"max\":4,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"type\":\"LABEL\",\"value\":\"Q1\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextValidityPattern = 
 			"Set\r\n"
@@ -60,7 +60,16 @@ public class ContextTest extends PickledCanaryTest {
 
 	private static final String stepsForContextAnnotationPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 2 End: 2 Interval: 1 From: Token from line #5: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{2,2}`\",\"min\":2,\"max\":2,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
-	
+	private static final String noflowContextPattern = 
+			"Extend\r\n"
+			+ "LoadE R1, 0xaaaa\r\n"
+			+ "Extend\r\n"
+			+ "LoadE R1, 0xbbbb";
+
+	private static final String tablesForNoflowContextPattern = "";
+
+	private static final String stepsForNoflowContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,187,187]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"}";
+
 	private static final String tablesForOrPatterns = "{\"R2\":[{\"value\":[1],\"mask\":[15]}],\"R3\":[{\"value\":[2],\"mask\":[15]}],\"R4\":[{\"value\":[3],\"mask\":[15]}],\"R1\":[{\"value\":[0],\"mask\":[15]}]}";
 	private static final String stepsForLastInstructionContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
 	private static final String lastInstructionContext2Pattern = 
@@ -321,6 +330,11 @@ public class ContextTest extends PickledCanaryTest {
 		builder.setBytes("0x00000018", "00 0F"); // Set
 		builder.setBytes("0x0000001A", "00 12"); // Shift R1, R1
 
+		builder.setBytes("0x0000001C", "00 13"); // Extend
+		builder.setBytes("0x0000001E", "00 14 AA AA"); // LoadE R1, 0xaaaa
+		builder.setBytes("0x00000022", "00 13"); // Extend
+		builder.setBytes("0x00000024", "00 14 BB BB"); // LoadE R1, 0xbbbb
+
 		program = builder.getProgram();
 	}
 	
@@ -352,7 +366,15 @@ public class ContextTest extends PickledCanaryTest {
 				+ stepsForContextAnnotationPattern + "]";
 		generatePatternTestHelper(contextAnnotationPattern, testQueryPatternExpected + this.getCompileInfo());
 	}
-	
+
+	@Test
+	public void testCompileNoflowContextPattern() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForNoflowContextPattern + "],\"steps\":["
+				+ stepsForNoflowContextPattern + "]";
+		// Current compiler does not handle noflow attribute
+		//generatePatternTestHelper(noflowContextPattern, testQueryPatternExpected + this.getCompileInfo());
+	}	
+
 	@Test
 	public void testCompileLastInstructionContext2() {
 		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
@@ -573,5 +595,13 @@ public class ContextTest extends PickledCanaryTest {
 		Assert.assertEquals(2, results.size());
 		Assert.assertEquals(this.program.getMinAddress().add(2), results.get(0).getStart());
 		Assert.assertEquals(this.program.getMinAddress().add(22), results.get(1).getStart());
+	}
+
+	@Test
+	public void testSearchNoflowContextPattern() {
+		// Current compiler does not handle noflow attribute
+		//List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program, this.program.getMinAddress(), noflowContextPattern);
+		//Assert.assertEquals(1, results.size());
+		//Assert.assertEquals(this.program.getMinAddress().add(28), results.get(0).getStart());
 	}
 }
