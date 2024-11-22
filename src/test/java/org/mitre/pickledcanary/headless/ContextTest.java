@@ -371,8 +371,7 @@ public class ContextTest extends PickledCanaryTest {
 	public void testCompileNoflowContextPattern() {
 		String testQueryPatternExpected = "{\"tables\":[" + tablesForNoflowContextPattern + "],\"steps\":["
 				+ stepsForNoflowContextPattern + "]";
-		// Current compiler does not handle noflow attribute
-		//generatePatternTestHelper(noflowContextPattern, testQueryPatternExpected + this.getCompileInfo());
+		generatePatternTestHelper(noflowContextPattern, testQueryPatternExpected + this.getCompileInfo());
 	}	
 
 	@Test
@@ -599,9 +598,8 @@ public class ContextTest extends PickledCanaryTest {
 
 	@Test
 	public void testSearchNoflowContextPattern() {
-		// Current compiler does not handle noflow attribute
-		//List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program, this.program.getMinAddress(), noflowContextPattern);
-		//Assert.assertEquals(1, results.size());
-		//Assert.assertEquals(this.program.getMinAddress().add(28), results.get(0).getStart());
+		List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program, this.program.getMinAddress(), noflowContextPattern);
+		Assert.assertEquals(1, results.size());
+		Assert.assertEquals(this.program.getMinAddress().add(28), results.get(0).getStart());
 	}
 }

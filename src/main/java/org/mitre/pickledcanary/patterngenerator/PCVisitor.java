@@ -152,6 +152,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		protected Stack<Integer> contextOrStack; // tracks where the start of the split steps
 		protected PatternContext outputContext; // contains the generated pattern steps
 		protected RegisterValue asmCurrentContext; // current context used for assembling instructions
+		protected RegisterValue noFlowSave = null;
 		
 		private ResultMap variantCtx;
 		
@@ -282,6 +283,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			this.outputContext.steps().add(lookupStep);
 
 			if (nextContexts.size() == 0 || tokenIdx == currentContext.steps().size() - 1) {
+				if (noFlowSave != null) {
+					// If there are no context changes, then the next context is the same as the previous
+					asmCurrentContext = handleNoFlows(noFlowSave, asmCurrentContext);
+					noFlowSave = null;
+				}
 				return;
 			}
 //			if (!futureContexts.containsKey(currentAddress)) {
@@ -291,7 +297,19 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			// set the next context, and if there are additional contexts, place them on the stack, so
 			// that new branches can be created for those contexts
 			Object[] nextContexts = this.nextContexts.toArray();
-			this.asmCurrentContext = (RegisterValue) nextContexts[0];
+			Boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
+
+			if (hasNoFlow || noFlowSave == null) {
+				if (noFlowSave == null && hasNoFlow) {
+					noFlowSave = asmCurrentContext;
+				}
+				asmCurrentContext = (RegisterValue) nextContexts[0];
+			}
+			else {
+				asmCurrentContext = handleNoFlows(noFlowSave, (RegisterValue) nextContexts[0]);
+				noFlowSave = null;
+			}
+
 			for (int i = 1; i < nextContexts.length; i++) {
 				this.contextOrStack.add(this.outputContext.steps().size());
 				this.contextStack
@@ -444,6 +462,33 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					System.err.print(System.lineSeparator());
 				}
 			}
+		}
+
+		private boolean checkNoFlow(RegisterValue currCtx, RegisterValue nextCtx) {
+			// TODO: Use cached contextreg and context variables
+			Register contextReg = language.getContextBaseRegister();
+
+			for (Register contextVar : contextReg.getChildRegisters()) {
+				if (!contextVar.followsFlow() && !nextCtx.getRegisterValue(contextVar)
+						.equals(currCtx.getRegisterValue(contextVar))) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// We aren't reverting the noflow variables in the next context
+		// Instead, we update the saved context with only the variables that follow flow from the next context
+		private RegisterValue handleNoFlows(RegisterValue saveCtx, RegisterValue nextCtx) {
+			// TODO: Use cached contextreg and context variables
+			Register contextReg = language.getContextBaseRegister();
+
+			for (Register contextVar : contextReg.getChildRegisters()) {
+				if (contextVar.followsFlow()) {
+					saveCtx = saveCtx.assign(contextVar, nextCtx.getRegisterValue(contextVar));
+				}
+			}
+			return saveCtx;
 		}
 	};
 
