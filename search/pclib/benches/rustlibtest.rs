@@ -39,6 +39,19 @@ fn test_meta_pattern(
     return pattern.run_patterns_data_automata(false, random_bytes.as_slice(), automata);
 }
 
+fn test_meta_pattern_new(file: &str) -> BTreeMap<String, Vec<Results>> {
+    let mut test_file = get_test_dir_path();
+    test_file.push(file);
+    // let pattern_data = fs::read(test_file.as_path()).unwrap();
+    // let pattern: Pattern = serde_json::from_slice(&pattern_data).unwrap();
+    let pattern: PatternMeta<Msb0> =
+        PatternMeta::load_pattern_meta(test_file.as_path().to_str().unwrap());
+
+    let random_bytes: Vec<u8> = (0..2000).map(|_| rand::random::<u8>()).collect();
+    // let random_bytes = vec![0u8; 1000];
+    return pattern.run_patterns_data(false, random_bytes.as_slice());
+}
+
 pub fn criterion_benchmark(c: &mut Criterion) {
     type EngineHash<'a> = HashMap<&'a str, fn(usize, &BitPattern<Msb0>, &AddressedBits) -> Results>;
     let mut engines: EngineHash = HashMap::new();
@@ -91,6 +104,15 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             })
         });
     }
+    group.bench_with_input(
+        BenchmarkId::new("pikevm_loop_ring_rc_priority", 0),
+        &pikevm_loop_ring_rc_priority::run_program::<Msb0, StatesRingRcRing<ThreadRc>>,
+        |b, _engine| {
+            b.iter(|| {
+                test_meta_pattern_new("../../../example_patterns/CVE-2019-3822/CVE-2019-3822.json")
+            })
+        },
+    );
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -150,6 +150,8 @@ fn recursive_backtracking_loop_helper<Endian: BitOrder + Clone + PartialEq>(
                 };
             }
             Op::Label { value } => {
+                // TODO: Check if label is already set and abort matching if current value we'd be setting here is not the same as what it already is.
+
                 let mut restore: Option<i128> = None;
                 if let Some(x) = saved.labels.get(value) {
                     restore = Some(*x);

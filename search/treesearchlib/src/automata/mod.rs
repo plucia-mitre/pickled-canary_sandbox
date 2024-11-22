@@ -30,6 +30,7 @@ pub mod pikevm_loop_ring_rc_priority;
 pub mod pikevm_ring;
 pub mod recursive_backtracking;
 pub mod recursive_backtracking_loop;
+pub mod resumable_vm;
 
 pub use pikevm_loop_ring_rc_priority::run_program;
 
