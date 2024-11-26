@@ -68,4 +68,9 @@ public class Byte extends StepBranchless {
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType) && this.value == other.value;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, value);
+	}
 }

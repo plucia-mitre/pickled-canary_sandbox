@@ -4,6 +4,7 @@
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONObject;
 
@@ -85,5 +86,23 @@ public abstract class OperandMeta implements Comparable<OperandMeta>{
 		}
 		
 		return 0;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(mask, type, varId);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		OperandMeta other = (OperandMeta) obj;
+		return Objects.equals(mask, other.mask) && type == other.type &&
+			Objects.equals(varId, other.varId);
 	}
 }

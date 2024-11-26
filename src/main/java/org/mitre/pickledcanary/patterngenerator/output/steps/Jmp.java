@@ -66,4 +66,9 @@ public class Jmp extends Step {
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType) && this.dest == other.dest;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, dest);
+	}
 }

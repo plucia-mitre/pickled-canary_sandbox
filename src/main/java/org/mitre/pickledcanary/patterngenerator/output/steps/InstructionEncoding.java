@@ -4,7 +4,9 @@
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -104,6 +106,7 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 		return this.context;
 	}
 
+	@Override
 	public String toString() {
 		return "InstructionEncoding(value: " + this.value.toString() + ", operands: " +
 			this.operands.toString() + ")";
@@ -129,5 +132,27 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 		}
 
 		return out;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(context);
+		result = prime * result + Objects.hash(operands, value);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		InstructionEncoding other = (InstructionEncoding) obj;
+		return Arrays.equals(context, other.context) && Objects.equals(operands, other.operands) &&
+			Objects.equals(value, other.value);
 	}
 }

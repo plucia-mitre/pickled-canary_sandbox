@@ -4,6 +4,7 @@
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONObject;
 
@@ -283,5 +284,26 @@ public class ScalarOperandMeta extends OperandMeta {
 			return true;
 		}
 		return false;
+	}
+
+	// TODO: PatternExpression doesn't implement hashCode or equals method, so this may not work
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + Objects.hash(expression);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ScalarOperandMeta other = (ScalarOperandMeta) obj;
+		return Objects.equals(expression, other.expression);
 	}
 }

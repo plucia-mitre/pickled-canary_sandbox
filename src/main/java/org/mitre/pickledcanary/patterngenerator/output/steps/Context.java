@@ -15,7 +15,7 @@ public class Context extends StepBranchless {
 
 	public Context() {
 		super(StepType.CONTEXT, null);
-		contextVars = new HashSet<RegisterValue>();
+		contextVars = new HashSet<>();
 	}
 
 	public Collection<RegisterValue> getContextVars() {
@@ -53,5 +53,10 @@ public class Context extends StepBranchless {
 		}
 		
 		return this.contextVars.containsAll(other.contextVars);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, contextVars);
 	}
 }

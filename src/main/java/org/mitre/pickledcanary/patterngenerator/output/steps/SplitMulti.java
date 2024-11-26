@@ -93,4 +93,9 @@ public class SplitMulti extends Step {
 		}
 		return true;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, dests);
+	}
 }

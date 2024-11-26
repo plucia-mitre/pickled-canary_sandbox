@@ -57,6 +57,12 @@ public class NegativeLookahead extends StepBranchless {
 		}
 		NegativeLookahead other = (NegativeLookahead) o;
 		// field comparison
+		//TODO: JSONObject doesn't seem to have equals and hashcode implementations
 		return Objects.equals(this.stepType, other.stepType) && this.pattern.equals(other.pattern);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, pattern);
 	}
 }

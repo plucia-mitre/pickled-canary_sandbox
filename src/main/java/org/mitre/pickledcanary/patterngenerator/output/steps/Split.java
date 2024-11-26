@@ -92,4 +92,9 @@ public class Split extends Step {
 		return Objects.equals(this.stepType, other.stepType) && this.dest1 == other.dest1 &&
 			this.dest2 == other.dest2;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, dest1, dest2);
+	}
 }
