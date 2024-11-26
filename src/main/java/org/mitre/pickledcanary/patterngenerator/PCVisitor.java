@@ -156,32 +156,32 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		
 		private ResultMap variantCtx;
 		
-		private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {};
+		private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {}
 
 		private record ResultMap(HashMap<AssemblyParseResult, PatternMap> map) {
 			ResultMap() {
 				this(new HashMap<AssemblyParseResult, PatternMap>());
 			}
-		};
+		}
 
 		private record PatternMap(HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap> map) {
 			PatternMap() {
 				this(new HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap>());
 			}
-		};
+		}
 
 		private record AddressMap(HashMap<Address, RegisterValue> map) {
 			AddressMap() {
 				this(new HashMap<Address, RegisterValue>());
 			}
-		};
+		}
 		
 		/**
 		 * Represents the start of a branch in the generated pattern.
 		 * @param context context at the start of the branch
 		 * @param startIdx index of the output of the first visitor where the first step of the branch begins
 		 */
-		private record ContextStackItem(RegisterValue context, int startIdx) {};
+		private record ContextStackItem(RegisterValue context, int startIdx) {}
 
 		ContextVisitor() {
 //			this.futureContexts = new HashMap<>();
@@ -208,18 +208,18 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					// process each instruction within the context branch
 					Step step = currentContext.steps.get(i);
 					switch (step.getStepType()) {
-						case Step.StepType.SPLITMULTI:
+						case SPLITMULTI:
 							int nextInst = visit((SplitMulti) step);
 							i = nextInst - 1;
 							break;
-						case Step.StepType.JMP:
+						case JMP:
 							nextInst = visit((Jmp) step);
 							i = nextInst - 1;
 							break;
-						case Step.StepType.LOOKUP:
+						case LOOKUP:
 							visit(i, ((LookupStep) step).copy());
 							break;
-						case Step.StepType.CONTEXT:
+						case CONTEXT:
 							visit((Context) step);
 							break;
 						default:
@@ -490,7 +490,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 			return saveCtx;
 		}
-	};
+	}
 
 	/**
 	 * Construct visitor to build Step output.
