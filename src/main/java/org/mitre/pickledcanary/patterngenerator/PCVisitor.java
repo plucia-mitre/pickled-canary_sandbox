@@ -93,23 +93,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	private PatternContext currentContext; // contains output of first visitor
 	private JSONObject metadata;
 	private final MyErrorListener errorListener;
-
-	private ResultMap variantCtx;
-
-	// TODO: An instruction can set any address to change context. We current assume that an
-	// instruction can change the context of only the next instruction.
-//	private final HashMap<Address, HashSet<RegisterValue>> futureContexts;
-	// contexts to apply for the next instruction -- this is a temp variable while above is being
-	// fixed
-	private HashSet<RegisterValue> nextContexts;
-
-	private final Stack<ContextStackItem> asmContextStack; // tracks new context branches that will
-															// be handled later
-	private final Stack<Integer> asmContextOrStack; // tracks where the start of the split steps
-	private RegisterValue asmCurrentContext; // current context used for assembling instructions
-	private PatternContext outputContext; // contains the generated pattern steps
 	
-
+	private ContextVisitor contextVisitor;
+	
 	/**
 	 * Individual key-value pairs within a single "CONTEXT" block
 	 */
@@ -120,7 +106,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 */
 	private List<Register> validContextRegisters = null;
 	
-
 	// Needed to reimplement this class, luckily it's small
 	static class ContextAdapter implements DisassemblerContextAdapter {
 		private final RegisterValue contextIn;
@@ -149,74 +134,363 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			contextsOut.put(after, progCtx.getFlowValue(contextIn));
 		}
 	}
-	
-	private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {};
 
-	private record ResultMap(HashMap<AssemblyParseResult, PatternMap> map) {
-		ResultMap() {
-			this(new HashMap<AssemblyParseResult, PatternMap>());
+
+	/**
+	 * This class contains the second step to creating the generated pattern. This step assembles
+	 * all the assembly instruction steps, gathers the context for each instruction, and generates
+	 * new branches and steps to make the pattern context aware.
+	 */
+	private class ContextVisitor {
+		// TODO: An instruction can set any address to change context. We current assume that an
+		// instruction can change the context of only the next instruction.
+//		private final HashMap<Address, HashSet<RegisterValue>> futureContexts;
+		// contexts to apply for the next instruction -- this is a temp variable while above is being
+		// fixed
+		protected HashSet<RegisterValue> nextContexts;
+		protected Stack<ContextStackItem> contextStack; // tracks new context branches that will be handled later
+		protected Stack<Integer> contextOrStack; // tracks where the start of the split steps
+		protected PatternContext outputContext; // contains the generated pattern steps
+		protected RegisterValue asmCurrentContext; // current context used for assembling instructions
+		protected RegisterValue noFlowSave = null;
+		
+		private ResultMap variantCtx;
+		
+		private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {};
+
+		private record ResultMap(HashMap<AssemblyParseResult, PatternMap> map) {
+			ResultMap() {
+				this(new HashMap<AssemblyParseResult, PatternMap>());
+			}
+		};
+
+		private record PatternMap(HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap> map) {
+			PatternMap() {
+				this(new HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap>());
+			}
+		};
+
+		private record AddressMap(HashMap<Address, RegisterValue> map) {
+			AddressMap() {
+				this(new HashMap<Address, RegisterValue>());
+			}
+		};
+		
+		/**
+		 * Represents the start of a branch in the generated pattern.
+		 * @param context context at the start of the branch
+		 * @param startIdx index of the output of the first visitor where the first step of the branch begins
+		 */
+		private record ContextStackItem(RegisterValue context, int startIdx) {};
+
+		ContextVisitor() {
+//			this.futureContexts = new HashMap<>();
+			this.nextContexts = new HashSet<RegisterValue>();
+			this.contextStack = new Stack<ContextStackItem>();
+			this.contextOrStack = new Stack<Integer>();
+			this.outputContext = new PatternContext();
 		}
-	};
-
-	private record PatternMap(HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap> map) {
-		PatternMap() {
-			this(new HashMap<DefaultWildAssemblyResolvedPatterns, AddressMap>());
-		}
-	};
-
-	private record AddressMap(HashMap<Address, RegisterValue> map) {
-		AddressMap() {
-			this(new HashMap<Address, RegisterValue>());
-		}
-	};
-
-	public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
-			RegisterValue inputCtx) {
-		ContextAdapter contextAdapter = new ContextAdapter(inputCtx);
-		ByteMemBufferImpl buffer = new ByteMemBufferImpl(currentAddress,
-				pats.getInstruction().getVals(), this.language.isBigEndian());
-
-		RegisterValue localCtx = null;
-		// Use the language to parse the context changes for each encoding
-		// We might be disassembling the instruction we just assembled
-		try {
-			SleighInstructionPrototype proto = (SleighInstructionPrototype) language.parse(buffer, contextAdapter, false);
-			// Get the local context changes from the prototype
-			// While we retrieve this for every encoding, we don't always need it
-			localCtx = proto.getParserContext(buffer, contextAdapter).getContextRegisterValue();
-		} catch (InsufficientBytesException | UnknownInstructionException | MemoryAccessException e) {
-			e.printStackTrace();
-		}
-
-		// A single encoding may change the global context at multiple addresses
-		AddressMap globalCtx = new AddressMap();
-
-		for (Entry<Address, RegisterValue> ent : contextAdapter.contextsOut.entrySet()) {
-			globalCtx.map.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
-		}
-		return new ContextChanges(localCtx, globalCtx);
-	}
-
-	private void printContextChanges(ResultMap variantCtx) {
-		System.err.print(System.lineSeparator());
-
-		for (AssemblyParseResult parseResult : variantCtx.map.keySet()) {
-			System.err.println("Instruction variant: " + parseResult);
-
-			PatternMap encodingCtx = variantCtx.map.get(parseResult);
-
-			for (DefaultWildAssemblyResolvedPatterns resolvedPats : encodingCtx.map.keySet()) {
-				System.err.println("Instruction encoding: " + resolvedPats.getInstruction());
-
-				AddressMap addressCtx = encodingCtx.map.get(resolvedPats);
-
-				for (Address address : addressCtx.map.keySet()) {
-					System.err.println("Context: " + addressCtx.map.get(address) + " set at address: " + address);
+		
+		/**
+		 * After the user pattern is passed through the first visitor above, run the output through this
+		 * second visitor to make the generated pattern context-aware.
+		 */
+		public void makeContextAware() {
+			// set first context
+			asmCurrentContext = currentProgram.getProgramContext()
+					.getDisassemblyContext(currentAddress);
+			this.contextStack.add(new ContextStackItem(asmCurrentContext, 0));
+			while (!this.contextStack.isEmpty()) {
+				// process each context branch
+				ContextStackItem csi = this.contextStack.removeLast();
+				asmCurrentContext = csi.context;
+				for (int i = csi.startIdx; i < currentContext.steps.size(); i++) {
+					// process each instruction within the context branch
+					Step step = currentContext.steps.get(i);
+					switch (step.getStepType()) {
+						case Step.StepType.SPLITMULTI:
+							int nextInst = visit((SplitMulti) step);
+							i = nextInst - 1;
+							break;
+						case Step.StepType.JMP:
+							nextInst = visit((Jmp) step);
+							i = nextInst - 1;
+							break;
+						case Step.StepType.LOOKUP:
+							visit(i, ((LookupStep) step).copy());
+							break;
+						case Step.StepType.CONTEXT:
+							visit((Context) step);
+							break;
+						default:
+							visit(step);
+					}
 				}
-				System.err.print(System.lineSeparator());
+				if (!this.contextStack.isEmpty()) {
+					// there are more context branches to handle
+					// add a jump, which will later be filled in with dest of end of pattern
+					this.outputContext.steps().add(new Jmp(0));
+					// add the next destination for a Split or SplitMulti block
+					int correspondingSplitIndex = this.contextOrStack.removeLast();
+					SplitMulti sm = (SplitMulti) this.outputContext.steps().get(correspondingSplitIndex);
+					sm.addDest(this.outputContext.steps().size());
+				}
+			}
+
+			for (int i = 0; i < this.outputContext.steps().size(); i++) {
+				// turn all SplitMulti blocks with only 2 destinations into a Split block
+				Step nextStep = this.outputContext.steps().get(i);
+				if (nextStep.getStepType() == Step.StepType.SPLITMULTI) {
+					SplitMulti sm = (SplitMulti) nextStep;
+					if (sm.getDests().size() == 2) {
+						Split newSplit = new Split(sm.getDests().get(0));
+						newSplit.setDest2(sm.getDests().get(1));
+						this.outputContext.steps().set(i, newSplit);
+					}
+				} else if (nextStep.getStepType() == Step.StepType.JMP) {
+					// all jumps should go to the end of the pattern
+					((Jmp) nextStep).setDest(this.outputContext.steps().size());
+				}
 			}
 		}
-	}
+
+		// #region Visit methods
+		// Returns the index of the step in the output of the first visitor from where the next branch
+		// should begin
+		private int visit(SplitMulti splitMultiStep) {
+			// when there is a split, we will process the first branch and put the other branches in a
+			// stack to process them after the first branch
+			for (int i = splitMultiStep.getDests().size() - 1; i > 0; i--) {
+				this.contextOrStack.add(this.outputContext.steps().size());
+				this.contextStack
+						.add(new ContextStackItem(this.asmCurrentContext, splitMultiStep.getDests().get(i)));
+			}
+			this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
+			return splitMultiStep.getDests().get(0);
+		}
+
+		// returns which step in the output of the first visitor to jump to in order to continue
+		// processing the current branch
+		private int visit(Jmp jmpStep) {
+			return jmpStep.getDest();
+		}
+
+		private void visit(int tokenIdx, LookupStep lookupStep) {
+			lookupStep = assembleInstruction(lookupStep);
+			if (lookupStep == null) {
+				return;
+			}
+			this.outputContext.steps().add(lookupStep);
+
+			if (nextContexts.size() == 0 || tokenIdx == currentContext.steps().size() - 1) {
+				if (noFlowSave != null) {
+					// If there are no context changes, then the next context is the same as the previous
+					asmCurrentContext = handleNoFlows(noFlowSave, asmCurrentContext);
+					noFlowSave = null;
+				}
+				return;
+			}
+//			if (!futureContexts.containsKey(currentAddress)) {
+//				return;
+//			}
+//			Object[] nextContexts = futureContexts.get(currentAddress).toArray();
+			// set the next context, and if there are additional contexts, place them on the stack, so
+			// that new branches can be created for those contexts
+			Object[] nextContexts = this.nextContexts.toArray();
+			Boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
+
+			if (hasNoFlow || noFlowSave == null) {
+				if (noFlowSave == null && hasNoFlow) {
+					noFlowSave = asmCurrentContext;
+				}
+				asmCurrentContext = (RegisterValue) nextContexts[0];
+			}
+			else {
+				asmCurrentContext = handleNoFlows(noFlowSave, (RegisterValue) nextContexts[0]);
+				noFlowSave = null;
+			}
+
+			for (int i = 1; i < nextContexts.length; i++) {
+				this.contextOrStack.add(this.outputContext.steps().size());
+				this.contextStack
+						.add(new ContextStackItem((RegisterValue) nextContexts[i], tokenIdx + 1));
+			}
+			if (nextContexts.length > 1) {
+				this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
+			}
+		}
+
+		// Override the current context
+		private void visit(Context contextStep) {
+			for (RegisterValue contextVar: contextStep.getContextVars()) {
+				// asmCurrentContext always contains the full context register
+				// We set the specified value for the specified context variable in that context register
+				contextVisitor.asmCurrentContext = contextVisitor.asmCurrentContext.assign(contextVar.getRegister(), contextVar);
+			}
+		}
+
+		private void visit(Step step) {
+			this.outputContext.steps().add(step);
+		}
+		// #endregion
+		
+		private LookupStep assembleInstruction(LookupStep lookupStep) {
+			Collection<AssemblyParseResult> parses = assembler
+					.parseLine(lookupStep.getInstructionText()).stream().filter(p -> {
+						if (PickledCanary.DEBUG && p.isError()) {
+							System.err.println("Error in AssemblyParseResult: " + p);
+						}
+						return !p.isError();
+					}).toList();
+			if (parses.isEmpty()) {
+				raiseInvalidInstructionException(lookupStep);
+			}
+
+			lookupStep = this.makeLookupStepFromParseResults(lookupStep, parses);
+			if (lookupStep == null) {
+				return null;
+			}
+			if (lookupStep.isEmpty()) {
+				raiseInvalidInstructionException(lookupStep);
+			}
+
+			return lookupStep;
+		}
+
+		private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep,
+				Collection<AssemblyParseResult> parses) {
+
+			LookupStepBuilder builder = new LookupStepBuilder(lookupStep, contextVisitor.outputContext.tables);
+			AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock
+					.fromRegisterValue(contextVisitor.asmCurrentContext);
+
+			System.err.println("Context going into assembler: " + assemblerCtx);
+			this.variantCtx = new ResultMap();
+			this.nextContexts = new HashSet<>();
+
+			for (AssemblyParseResult p : parses) {
+				if (PickledCanary.DEBUG) {
+					// Print each instruction variant
+					System.err.println("parse = " + p);
+				}
+
+				AssemblyResolutionResults results;
+
+				// Resolve each instruction variant to get the encodings
+				// All variants should use the same input context (global context) for resolution
+				// Encodings for variants which are not valid in the provided context are filtered out by the assembler
+				results = assembler.resolveTree(p, currentAddress, assemblerCtx);
+
+				if (monitor.isCancelled()) {
+					// Yield if user wants to cancel operation
+					return null;
+				}
+
+				PatternMap encodingCtx = new PatternMap();
+				
+				for (AssemblyResolution res : results) {
+					if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
+						// We must compute the context changes (if any) for every pats
+						// The instruction encodings may affect the global context
+						ContextChanges contextChanges = getContextChanges(pats, contextVisitor.asmCurrentContext);
+						System.err.println("Printing local context: " + contextChanges.localCtx());
+
+						builder.addAssemblyPattern(pats, contextChanges.localCtx());
+
+						AddressMap encodingContextChanges = contextChanges.globalCtx();
+
+						encodingCtx.map.put(pats, encodingContextChanges);
+
+						for (Address a : encodingContextChanges.map.keySet()) {
+							contextVisitor.nextContexts.add(encodingContextChanges.map.get(a));
+//							if (!futureContexts.containsKey(a)) {
+//								futureContexts.put(a, new HashSet<>());
+//							}
+//							futureContexts.get(a).add(encodingContextChanges.get(a));
+						}
+					}
+				}
+				variantCtx.map.put(p, encodingCtx);
+			}
+			printContextChanges(this.variantCtx);
+			return builder.buildLookupStep();
+		}
+		
+		public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
+				RegisterValue inputCtx) {
+			ContextAdapter contextAdapter = new ContextAdapter(inputCtx);
+			ByteMemBufferImpl buffer = new ByteMemBufferImpl(currentAddress,
+					pats.getInstruction().getVals(), language.isBigEndian());
+
+			RegisterValue localCtx = null;
+			// Use the language to parse the context changes for each encoding
+			// We might be disassembling the instruction we just assembled
+			try {
+				SleighInstructionPrototype proto = (SleighInstructionPrototype) language.parse(buffer, contextAdapter, false);
+				// Get the local context changes from the prototype
+				// While we retrieve this for every encoding, we don't always need it
+				localCtx = proto.getParserContext(buffer, contextAdapter).getContextRegisterValue();
+			} catch (InsufficientBytesException | UnknownInstructionException | MemoryAccessException e) {
+				e.printStackTrace();
+			}
+
+			// A single encoding may change the global context at multiple addresses
+			AddressMap globalCtx = new AddressMap();
+
+			for (Entry<Address, RegisterValue> ent : contextAdapter.contextsOut.entrySet()) {
+				globalCtx.map.put(ent.getKey(), inputCtx.combineValues(ent.getValue()));
+			}
+			return new ContextChanges(localCtx, globalCtx);
+		}
+
+		private void printContextChanges(ResultMap variantCtx) {
+			System.err.print(System.lineSeparator());
+
+			for (AssemblyParseResult parseResult : variantCtx.map.keySet()) {
+				System.err.println("Instruction variant: " + parseResult);
+
+				PatternMap encodingCtx = variantCtx.map.get(parseResult);
+
+				for (DefaultWildAssemblyResolvedPatterns resolvedPats : encodingCtx.map.keySet()) {
+					System.err.println("Instruction encoding: " + resolvedPats.getInstruction());
+
+					AddressMap addressCtx = encodingCtx.map.get(resolvedPats);
+
+					for (Address address : addressCtx.map.keySet()) {
+						System.err.println("Context: " + addressCtx.map.get(address) + " set at address: " + address);
+					}
+					System.err.print(System.lineSeparator());
+				}
+			}
+		}
+
+		private boolean checkNoFlow(RegisterValue currCtx, RegisterValue nextCtx) {
+			// TODO: Use cached contextreg and context variables
+			Register contextReg = language.getContextBaseRegister();
+
+			for (Register contextVar : contextReg.getChildRegisters()) {
+				if (!contextVar.followsFlow() && !nextCtx.getRegisterValue(contextVar)
+						.equals(currCtx.getRegisterValue(contextVar))) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// We aren't reverting the noflow variables in the next context
+		// Instead, we update the saved context with only the variables that follow flow from the next context
+		private RegisterValue handleNoFlows(RegisterValue saveCtx, RegisterValue nextCtx) {
+			// TODO: Use cached contextreg and context variables
+			Register contextReg = language.getContextBaseRegister();
+
+			for (Register contextVar : contextReg.getChildRegisters()) {
+				if (contextVar.followsFlow()) {
+					saveCtx = saveCtx.assign(contextVar, nextCtx.getRegisterValue(contextVar));
+				}
+			}
+			return saveCtx;
+		}
+	};
 
 	/**
 	 * Construct visitor to build Step output.
@@ -250,12 +524,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		this.metadata = new JSONObject();
 		errorListener = new MyErrorListener();
+		
+		this.contextVisitor = new ContextVisitor();
 
-//		this.futureContexts = new HashMap<>();
-		this.nextContexts = new HashSet<>();
-		this.asmContextStack = new Stack<>();
-		this.asmContextOrStack = new Stack<>();
-		this.outputContext = new PatternContext();
 		this.contextEntries = new HashMap<>();
 	}
 
@@ -271,9 +542,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.metadata = new JSONObject();
 
 //		this.futureContexts.clear();
-		this.asmContextStack.clear();
-		this.asmContextOrStack.clear();
-		this.outputContext = new PatternContext();
+		
+		this.contextVisitor = new ContextVisitor();
 		this.contextEntries.clear();
 	}
 
@@ -563,224 +833,6 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		return null;
 	}
 	// end region
-	
-	/**
-	 * After the user pattern is passed through the first visitor above, run the output through this
-	 * second visitor to make the generated pattern context-aware.
-	 *
-	 * TODO: refactor this to actually use the visitor pattern?
-	 */
-	public void doVisitorPart2() {
-		if (PickledCanary.DEBUG) {
-			System.out.println("VISITOR PART 2!!!");
-		}
-		// set first context
-		asmCurrentContext = this.currentProgram.getProgramContext()
-				.getDisassemblyContext(currentAddress);
-		asmContextStack.add(new ContextStackItem(asmCurrentContext, 0));
-		while (asmContextStack.size() != 0) {
-			// process each context branch
-			ContextStackItem csi = asmContextStack.pop();
-			asmCurrentContext = csi.context;
-			for (int i = csi.startIdx; i < this.currentContext.steps.size(); i++) {
-				// process each instruction within the context branch
-				Step step = this.currentContext.steps.get(i);
-				if (PickledCanary.DEBUG) {
-					System.out.println("Visitor part 2, processing: "
-							+ step.getStepType().toString() + " at index " + i);
-				}
-				switch (step.getStepType()) {
-					case SPLITMULTI:
-						int nextInst = visit((SplitMulti) step);
-						i = nextInst - 1;
-						break;
-					case JMP:
-						nextInst = visit((Jmp) step);
-						i = nextInst - 1;
-						break;
-					case LOOKUP:
-						visit(i, ((LookupStep) step).copy());
-						break;
-					case CONTEXT:
-						visit((Context) step);
-						break;
-					default:
-						visit(step);
-				}
-			}
-			if (asmContextStack.size() != 0) {
-				// there are more context branches to handle
-				// add a jump, which will later be filled in with dest of end of pattern
-				this.outputContext.steps().add(new Jmp(0));
-				// add the next destination for a Split or SplitMulti block
-				int correspondingSplitIndex = asmContextOrStack.pop();
-				SplitMulti sm = (SplitMulti) this.outputContext.steps().get(correspondingSplitIndex);
-				sm.addDest(this.outputContext.steps().size());
-			}
-		}
-
-		for (int i = 0; i < this.outputContext.steps().size(); i++) {
-			// turn all SplitMulti blocks with only 2 destinations into a Split block
-			Step nextStep = this.outputContext.steps().get(i);
-			if (nextStep.getStepType() == Step.StepType.SPLITMULTI) {
-				SplitMulti sm = (SplitMulti) nextStep;
-				if (sm.getDests().size() == 2) {
-					Split newSplit = new Split(sm.getDests().get(0));
-					newSplit.setDest2(sm.getDests().get(1));
-					this.outputContext.steps().set(i, newSplit);
-				}
-			} else if (nextStep.getStepType() == Step.StepType.JMP) {
-				// all jumps should go to the end of the pattern
-				((Jmp) nextStep).setDest(this.outputContext.steps().size());
-			}
-		}
-		for (int i = 0; i < this.outputContext.steps.size(); i++) {
-			System.out.println(i + " " + this.outputContext.steps.get(i).toString());
-		}
-	}
-
-	// Returns the index of the step in the output of the first visitor from where the next branch
-	// should begin
-	private int visit(SplitMulti splitMultiStep) {
-		// when there is a split, we will process the first branch and put the other branches in a
-		// stack to process them after the first branch
-		for (int i = splitMultiStep.getDests().size() - 1; i > 0; i--) {
-			asmContextOrStack.add(this.outputContext.steps().size());
-			asmContextStack
-					.add(new ContextStackItem(asmCurrentContext, splitMultiStep.getDests().get(i)));
-		}
-		this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
-		return splitMultiStep.getDests().get(0);
-	}
-
-	// returns which step in the output of the first visitor to jump to in order to continue
-	// processing the current branch
-	private int visit(Jmp jmpStep) {
-		return jmpStep.getDest();
-	}
-
-	private void visit(int tokenIdx, LookupStep lookupStep) {
-		lookupStep = assembleInstruction(lookupStep);
-		if (lookupStep == null) {
-			return;
-		}
-		this.outputContext.steps().add(lookupStep);
-
-		if (nextContexts.size() == 0 || tokenIdx == this.currentContext.steps().size() - 1) {
-			return;
-		}
-//		if (!futureContexts.containsKey(currentAddress)) {
-//			return;
-//		}
-//		Object[] nextContexts = futureContexts.get(currentAddress).toArray();
-		// set the next context, and if there are additional contexts, place them on the stack, so
-		// that new branches can be created for those contexts
-		Object[] nextContexts = this.nextContexts.toArray();
-		asmCurrentContext = (RegisterValue) nextContexts[0];
-		for (int i = 1; i < nextContexts.length; i++) {
-			asmContextOrStack.add(this.outputContext.steps().size());
-			asmContextStack
-					.add(new ContextStackItem((RegisterValue) nextContexts[i], tokenIdx + 1));
-		}
-		if (nextContexts.length > 1) {
-			this.outputContext.steps().add(new SplitMulti(this.outputContext.steps().size() + 1));
-		}
-	}
-
-	// Override the current context
-	private void visit(Context contextStep) {
-		for (RegisterValue contextVar: contextStep.getContextVars()) {
-			// asmCurrentContext always contains the full context register
-			// We set the specified value for the specified context variable in that context register
-			asmCurrentContext = asmCurrentContext.assign(contextVar.getRegister(), contextVar);
-		}
-	}
-
-	private void visit(Step step) {
-		this.outputContext.steps().add(step);
-	}
-
-	private LookupStep assembleInstruction(LookupStep lookupStep) {
-		Collection<AssemblyParseResult> parses = assembler
-				.parseLine(lookupStep.getInstructionText()).stream().filter(p -> {
-					if (PickledCanary.DEBUG && p.isError()) {
-						System.err.println("Error in AssemblyParseResult: " + p);
-					}
-					return !p.isError();
-				}).toList();
-		if (parses.isEmpty()) {
-			raiseInvalidInstructionException(lookupStep);
-		}
-
-		lookupStep = this.makeLookupStepFromParseResults(lookupStep, parses);
-		if (lookupStep == null) {
-			return null;
-		}
-		if (lookupStep.isEmpty()) {
-			raiseInvalidInstructionException(lookupStep);
-		}
-
-		return lookupStep;
-	}
-
-	private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep,
-			Collection<AssemblyParseResult> parses) {
-
-		LookupStepBuilder builder = new LookupStepBuilder(lookupStep, outputContext.tables);
-		AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock
-				.fromRegisterValue(asmCurrentContext);
-
-		System.err.println("Context going into assembler: " + assemblerCtx);
-		this.variantCtx = new ResultMap();
-		this.nextContexts = new HashSet<>();
-
-		for (AssemblyParseResult p : parses) {
-			if (PickledCanary.DEBUG) {
-				// Print each instruction variant
-				System.err.println("parse = " + p);
-			}
-
-			AssemblyResolutionResults results;
-
-			// Resolve each instruction variant to get the encodings
-			// All variants should use the same input context (global context) for resolution
-			// Encodings for variants which are not valid in the provided context are filtered out by the assembler
-			results = assembler.resolveTree(p, currentAddress, assemblerCtx);
-
-			if (monitor.isCancelled()) {
-				// Yield if user wants to cancel operation
-				return null;
-			}
-
-			PatternMap encodingCtx = new PatternMap();
-			
-			for (AssemblyResolution res : results) {
-				if (res instanceof DefaultWildAssemblyResolvedPatterns pats) {
-					// We must compute the context changes (if any) for every pats
-					// The instruction encodings may affect the global context
-					ContextChanges contextChanges = getContextChanges(pats, asmCurrentContext);
-					System.err.println("Printing local context: " + contextChanges.localCtx());
-
-					builder.addAssemblyPattern(pats, contextChanges.localCtx());
-
-					AddressMap encodingContextChanges = contextChanges.globalCtx();
-
-					encodingCtx.map.put(pats, encodingContextChanges);
-
-					for (Address a : encodingContextChanges.map.keySet()) {
-						nextContexts.add(encodingContextChanges.map.get(a));
-//						if (!futureContexts.containsKey(a)) {
-//							futureContexts.put(a, new HashSet<>());
-//						}
-//						futureContexts.get(a).add(encodingContextChanges.get(a));
-					}
-				}
-			}
-			variantCtx.map.put(p, encodingCtx);
-		}
-		printContextChanges(this.variantCtx);
-		return builder.buildLookupStep();
-	}
 
 	/**
 	 * Return the results of having processed the pattern as a {@link JSONObject} which can be used
@@ -790,8 +842,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 * @return A {@link JSONObject} containing the processed equivalent of the last pattern visited.
 	 */
 	public JSONObject getJSONObject(boolean withDebugInfo) {
-		this.outputContext.canonicalize();
-		JSONObject output = this.outputContext.getJson(this.metadata);
+		this.contextVisitor.outputContext.canonicalize();
+		JSONObject output = this.contextVisitor.outputContext.getJson(this.metadata);
 
 		if (withDebugInfo) {
 			output.append("compile_info", this.getDebugJson());
@@ -810,8 +862,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 *         visited.
 	 */
 	public Pattern getPattern() {
-		this.outputContext.canonicalize();
-		return this.outputContext.getPattern();
+		this.contextVisitor.outputContext.canonicalize();
+		return this.contextVisitor.outputContext.getPattern();
 	}
 
 	private JSONObject getDebugJson() {
@@ -910,23 +962,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		var progContext = parser.prog();
 
 		this.visit(progContext);
-
-		this.doVisitorPart2();
+		this.contextVisitor.makeContextAware();
 
 		monitor.setIndeterminate(false);
 	}
 
-	/**
-	 * Represents the start of a branch in the generated pattern.
-	 */
-	static class ContextStackItem {
-		RegisterValue context; // context at the start of the branch
-		int startIdx; // index of the output of the first visitor where the first step of the branch
-						// begins
-
-		public ContextStackItem(RegisterValue context, int startIdx) {
-			this.context = context;
-			this.startIdx = startIdx;
-		}
-	}
 }
