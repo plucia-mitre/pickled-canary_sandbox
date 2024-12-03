@@ -186,7 +186,17 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		 * @param context context at the start of the branch
 		 * @param startIdx index of the output of the first visitor where the first step of the branch begins
 		 */
-		private record ContextStackItem(RegisterValue context, int startIdx) {};
+		private class ContextStackItem {
+			RegisterValue context;
+			RegisterValue noFlowContext;
+			int startIdx;
+			
+			private ContextStackItem(RegisterValue context, RegisterValue noFlowContext, int startIdx) {
+				this.context = context;
+				this.noFlowContext = noFlowContext;
+				this.startIdx = startIdx;
+			}
+		}
 
 		ContextVisitor() {
 //			this.futureContexts = new HashMap<>();
@@ -204,7 +214,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			// set first context
 			asmCurrentContext = currentProgram.getProgramContext()
 					.getDisassemblyContext(currentAddress);
-			this.contextStack.add(new ContextStackItem(asmCurrentContext, 0));
+			this.contextStack.add(new ContextStackItem(asmCurrentContext, null, 0));
 			while (!this.contextStack.isEmpty()) {
 				// process each context branch
 				ContextStackItem csi = this.contextStack.removeLast();
@@ -223,13 +233,23 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 							break;
 						case Step.StepType.LOOKUP:
 							visit(i, ((LookupStep) step).copy());
+							if (csi.noFlowContext != null) {
+								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								noFlowSave = null;
+							}
 							break;
 						case Step.StepType.CONTEXT:
 							visit((Context) step);
+							csi.noFlowContext = null;
 							break;
 						default:
 							visit(step);
+							if (csi.noFlowContext != null) {
+								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								noFlowSave = null;
+							}
 					}
+					
 				}
 				if (!this.contextStack.isEmpty()) {
 					// there are more context branches to handle
@@ -269,7 +289,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			for (int i = splitMultiStep.getDests().size() - 1; i > 0; i--) {
 				this.contextOrStack.add(this.contextAwareContext.steps().size());
 				this.contextStack
-						.add(new ContextStackItem(this.asmCurrentContext, splitMultiStep.getDests().get(i)));
+						.add(new ContextStackItem(asmCurrentContext, noFlowSave, splitMultiStep.getDests().get(i)));
 			}
 			this.contextAwareContext.steps().add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
 			return splitMultiStep.getDests().get(0);
@@ -319,7 +339,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			for (int i = 1; i < nextContexts.length; i++) {
 				this.contextOrStack.add(this.contextAwareContext.steps().size());
 				this.contextStack
-						.add(new ContextStackItem((RegisterValue) nextContexts[i], tokenIdx + 1));
+						.add(new ContextStackItem((RegisterValue) nextContexts[i], noFlowSave, tokenIdx + 1));
 			}
 			if (nextContexts.length > 1) {
 				this.contextAwareContext.steps().add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
@@ -1117,6 +1137,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.contextVisitor.makeContextAware();
 		outputContext = this.pathDeduplicator.deduplicatePaths(contextVisitor.contextAwareContext);
 		
+		System.out.println("initial pattern");
+		for (int i = 0; i < currentContext.steps.size(); i++) {
+			System.out.println(i + ": " + currentContext.steps.get(i));
+		}
 		System.out.println("context pattern");
 		for (int i = 0; i < contextVisitor.contextAwareContext.steps.size(); i++) {
 			System.out.println(i + ": " + contextVisitor.contextAwareContext.steps.get(i));

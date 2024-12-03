@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mitre.pickledcanary.PickledCanary;
+import org.mitre.pickledcanary.patterngenerator.QueryParseException;
 import org.mitre.pickledcanary.search.SavedDataAddresses;
 
 import ghidra.app.plugin.processors.sleigh.SleighLanguage;
@@ -70,6 +71,24 @@ public class ContextTest extends PickledCanaryTest {
 
 	private static final String stepsForNoflowContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,187,187]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"}";
 
+	private static final String illegalNoFlowContextPattern = 
+			"Extend\r\n"
+			+ "`START_OR`"
+			+ "LoadE R1, 0xaaaa\r\n"
+			+ "`OR`"
+			+ "Extend\r\n"
+			+ "LoadE R1 0xaaaa\r\n"
+			+ "`END_OR";
+	
+	private static final String illegalNoFlowContext2Pattern = 
+			"Extend\r\n"
+			+ "`START_OR`"
+			+ "LoadE R1, 0xaaaa\r\n"
+			+ "`OR`"
+			+ "LoadE R1 0xaaaa\r\n"
+			+ "LoadE R1 0xaaaa\r\n"
+			+ "`END_OR";
+	
 	private static final String tablesForOrPatterns = "{\"R2\":[{\"value\":[1],\"mask\":[15]}],\"R3\":[{\"value\":[2],\"mask\":[15]}],\"R4\":[{\"value\":[3],\"mask\":[15]}],\"R1\":[{\"value\":[0],\"mask\":[15]}]}";
 	private static final String stepsForLastInstructionContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
 	private static final String lastInstructionContext2Pattern = 
@@ -372,7 +391,17 @@ public class ContextTest extends PickledCanaryTest {
 		String testQueryPatternExpected = "{\"tables\":[" + tablesForNoflowContextPattern + "],\"steps\":["
 				+ stepsForNoflowContextPattern + "]";
 		generatePatternTestHelper(noflowContextPattern, testQueryPatternExpected + this.getCompileInfo());
-	}	
+	}
+	
+	@Test (expected=QueryParseException.class)
+	public void testIllegalNoFlowContextPattern() {
+		generatePatternTestHelper(illegalNoFlowContextPattern, "");
+	}
+	
+	@Test (expected=QueryParseException.class)
+	public void testIllegalNoFlowContext2Pattern() {
+		generatePatternTestHelper(illegalNoFlowContext2Pattern, "");
+	}
 
 	@Test
 	public void testCompileLastInstructionContext2() {
