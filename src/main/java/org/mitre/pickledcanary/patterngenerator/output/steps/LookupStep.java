@@ -147,4 +147,9 @@ public class LookupStep extends StepBranchless {
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType) && this.data.equals(other.data);
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, data);
+	}
 }

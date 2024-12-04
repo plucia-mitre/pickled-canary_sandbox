@@ -53,6 +53,7 @@ final record ByteArrayWrapper(byte[] data) implements JSONString, Comparable<Byt
 		return out;
 	}
 
+	@Override
 	public String toString() {
 		return toJSONString();
 	}

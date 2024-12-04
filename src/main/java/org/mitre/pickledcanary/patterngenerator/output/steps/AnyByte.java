@@ -38,4 +38,9 @@ public class AnyByte extends StepBranchless {
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType);
 	}
+	
+	@Override
+	public int hashCode() {
+		return stepType.hashCode();
+	}
 }

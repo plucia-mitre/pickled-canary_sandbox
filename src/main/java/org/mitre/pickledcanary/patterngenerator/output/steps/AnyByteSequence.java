@@ -116,4 +116,9 @@ public class AnyByteSequence extends StepBranchless {
 		return Objects.equals(this.stepType, other.stepType) && this.min == other.min &&
 			this.max == other.max && this.interval == other.interval;
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, min, max, interval);
+	}
 }

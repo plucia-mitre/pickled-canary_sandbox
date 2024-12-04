@@ -70,6 +70,11 @@ public class MaskedByte extends StepBranchless {
 		MaskedByte other = (MaskedByte) o;
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType) && this.mask == other.mask &&
-			this.value == other.mask;
+			this.value == other.value;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, mask, value);
 	}
 }

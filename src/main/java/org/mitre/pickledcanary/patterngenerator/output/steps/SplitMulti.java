@@ -13,10 +13,14 @@ import org.json.JSONObject;
 public class SplitMulti extends Step {
 
 	private final List<Integer> dests;
-
-	public SplitMulti(int dest1) {
+	
+	public SplitMulti() {
 		super(StepType.SPLITMULTI, null);
 		this.dests = new ArrayList<>();
+	}
+
+	public SplitMulti(int dest1) {
+		this();
 		this.dests.add(dest1);
 	}
 
@@ -92,5 +96,10 @@ public class SplitMulti extends Step {
 			}
 		}
 		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, dests);
 	}
 }

@@ -118,10 +118,10 @@ public class X86LePickledCanaryTest extends PickledCanaryTest {
 	public void testOrPattern() {
 		// Notice that there are whitespace characters after START_OR (something we've
 		// had trouble with in the past)
-		final String testQuery = "`START_OR`    \n" + simpleInstruction + "\n`OR`\n" + simpleInstruction
+		final String testQuery = "`START_OR`    \n" + simpleInstruction + "\n`OR`\n" + byteInstruction
 				+ "\n`END_OR`\n";
 		String testQueryPatternExpected = "{\"tables\":[],\"steps\":[{\"dest2\":3,\"type\":\"SPLIT\",\"dest1\":1},"
-				+ stepsForSimpleInstruction + ",{\"type\":\"JMP\",\"dest\":4}," + stepsForSimpleInstruction + "]";
+				+ stepsForSimpleInstruction + ",{\"type\":\"JMP\",\"dest\":4}," + stepsForByteInstruction + "]";
 		generatePatternTestHelper(testQuery, testQueryPatternExpected + getCompileInfo());
 	}
 

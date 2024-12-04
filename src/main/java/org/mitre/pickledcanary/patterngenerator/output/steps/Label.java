@@ -59,4 +59,9 @@ public class Label extends StepBranchless {
 		// field comparison
 		return Objects.equals(this.stepType, other.stepType) && this.value.equals(other.value);
 	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(stepType, value);
+	}
 }

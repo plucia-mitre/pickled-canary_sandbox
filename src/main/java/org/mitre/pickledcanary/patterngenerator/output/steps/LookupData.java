@@ -4,9 +4,11 @@
 package org.mitre.pickledcanary.patterngenerator.output.steps;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -168,7 +170,29 @@ public record LookupData(
 		return maskedData;
 	}
 	
+	@Override
 	public String toString() {
 		return "LookupData[mask=" + new ByteArrayWrapper(this.mask) + ", choices=" +  this.choices.toString() + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(mask);
+		result = prime * result + Objects.hash(choices);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		LookupData other = (LookupData) obj;
+		return Objects.equals(choices, other.choices) && Arrays.equals(mask, other.mask);
 	}
 }
