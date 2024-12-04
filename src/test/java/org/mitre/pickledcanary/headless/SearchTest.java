@@ -3,6 +3,7 @@
 package org.mitre.pickledcanary.headless;
 
 import ghidra.program.database.ProgramBuilder;
+import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.data.Pointer32DataType;
 import ghidra.program.model.mem.Memory;
 import org.junit.Assert;
@@ -14,7 +15,6 @@ import org.mitre.pickledcanary.patterngenerator.output.steps.Match;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Step;
 import org.mitre.pickledcanary.search.Pattern;
 import org.mitre.pickledcanary.search.SavedDataAddresses;
-import org.mitre.pickledcanary.search.VmSearch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +30,9 @@ public class SearchTest extends PickledCanaryTest {
 		builder.createLabel("0x1008420", "TEST_LABEL");
 		builder.createLabel("0x1008424", "TEST_LABEL2");
 		builder.createLabel("0x1000424", "TEST_LABEL3");
+		
+
+		builder.setBytes("0x2008420", "77 88 00 00 77 88 00 00 ");
 
 		setup(builder);
 	}
@@ -50,8 +53,7 @@ public class SearchTest extends PickledCanaryTest {
 		start.append(Pattern.getSaveStart());
 		pattern.prepend(start);
 
-		VmSearch vm = new VmSearch(pattern, program.getMemory());
-		List<SavedDataAddresses> result = vm.runAll(monitor);
+		List<SavedDataAddresses> result = PickledCanary.runAll(monitor, program, pattern);
 		if (result.size() == 0) {
 			System.out.println("No match");
 		}
@@ -59,13 +61,17 @@ public class SearchTest extends PickledCanaryTest {
 			System.out.println("Match!");
 			System.out.println(result);
 		}
-		Assert.assertEquals(3, result.size());
+		Assert.assertEquals(7, result.size());
 		Assert.assertEquals(memory.getMinAddress().add(1), result.get(0).getStart());
 		Assert.assertEquals(memory.getMinAddress().add(4), result.get(1).getStart());
 		Assert.assertEquals(memory.getMinAddress().add(5), result.get(2).getStart());
 		Assert.assertEquals(memory.getMinAddress().add(2), result.get(0).getEnd());
 		Assert.assertEquals(memory.getMinAddress().add(5), result.get(1).getEnd());
 		Assert.assertEquals(memory.getMinAddress().add(6), result.get(2).getEnd());
+		Assert.assertEquals(memory.getMinAddress().add(0x1000002), result.get(3).getStart());
+		Assert.assertEquals(memory.getMinAddress().add(0x1000003), result.get(4).getStart());
+		Assert.assertEquals(memory.getMinAddress().add(0x1000006), result.get(5).getStart());
+		Assert.assertEquals(memory.getMinAddress().add(0x1000007), result.get(6).getStart());
 	}
 
 	@Test
@@ -98,4 +104,52 @@ public class SearchTest extends PickledCanaryTest {
 				results.get(0).labels().get("foo"));
 	}
 
+	@Test
+	public void testMemoryRanges() {
+		String patternIn = "`=0x77`\n`foo:`\n`=0x88`";
+		List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), patternIn);
+		Assert.assertEquals(2, results.size());
+		Assert.assertEquals(this.program.getMinAddress().add(0x1000000), results.get(0).getStart());
+		Assert.assertEquals(this.program.getMinAddress().add(0x1000000).add(1),
+			results.get(0).labels().get("foo"));
+
+		// Check first range has no hits
+		List<AddressRange> firstRangeOnly = new ArrayList<>();
+		firstRangeOnly.add(this.program.getMemory().getAddressRanges().next());
+
+		results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), patternIn, firstRangeOnly);
+		Assert.assertEquals(0, results.size());
+
+		// Second second range has both matches
+		List<AddressRange> secondRangeOnly = new ArrayList<>();
+		var ranges = this.program.getMemory().getAddressRanges();
+		ranges.next();
+		AddressRange second = ranges.next();
+		secondRangeOnly.add(second);
+
+		results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), patternIn, secondRangeOnly);
+		Assert.assertEquals(2, results.size());
+
+		// Make a sub-range of the second half of the second range which should only have one match
+		List<AddressRange> partOfSecondRange = new ArrayList<>();
+		AddressRange partOfSecond =
+			second.intersectRange(second.getMinAddress().add(4), second.getMaxAddress());
+		partOfSecondRange.add(partOfSecond);
+
+		results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), patternIn, partOfSecondRange);
+		Assert.assertEquals(1, results.size());
+
+		// Make a sub-range of the first half of the second range which should only have one match
+		partOfSecondRange = new ArrayList<>();
+		partOfSecond = second.intersectRange(second.getMinAddress(), second.getMinAddress().add(4));
+		partOfSecondRange.add(partOfSecond);
+
+		results = PickledCanary.parseAndRunAll(monitor, this.program,
+			this.program.getMinAddress(), patternIn, partOfSecondRange);
+		Assert.assertEquals(1, results.size());
+	}
 }

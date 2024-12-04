@@ -27,6 +27,7 @@ import java.awt.event.TextListener;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONObject;
 import org.mitre.pickledcanary.PickledCanary;
@@ -35,12 +36,14 @@ import org.mitre.pickledcanary.search.Pattern;
 import org.mitre.pickledcanary.search.SavedDataAddresses;
 
 import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressRange;
 import ghidra.program.model.listing.Program;
 import ghidra.util.datastruct.Accumulator;
 import ghidra.util.task.TaskMonitor;
 
 public class PickledCanarySearcher {
 
+	public static final String BUILDING_PARSER = "Building assembly parser...";
 	public static final String COMPILING_PATTERN = "Compiling Pattern...";
 	public static final String NOT_COMPILED_STRING = "Compile pattern first!";
 
@@ -52,6 +55,7 @@ public class PickledCanarySearcher {
 	private String compiledPattern = NOT_COMPILED_STRING; // keeps track of if the pattern is
 															 // compiling or not
 	private PCVisitor visitor;
+	List<AddressRange> range;
 
 	public PickledCanarySearcher(Program program, Address currentAddress, String query) {
 		this.program = program;
@@ -70,6 +74,7 @@ public class PickledCanarySearcher {
 	}
 
 	public void search(Accumulator<SavedDataAddresses> accumulator, TaskMonitor monitor) {
+		monitor.setMessage(PickledCanarySearcher.BUILDING_PARSER);
 		if (this.visitor == null) {
 			this.visitor = new PCVisitor(program, currentAddress, null);
 		}
@@ -85,7 +90,7 @@ public class PickledCanarySearcher {
 		// Set our message to say that we're compiling... and tell everyone who cares
 		this.compiledPattern = PickledCanarySearcher.COMPILING_PATTERN;
 		this.notifyListeners();
-		
+
 		monitor.setMessage(PickledCanarySearcher.COMPILING_PATTERN);
 
 		Instant start = Instant.now();
@@ -101,20 +106,22 @@ public class PickledCanarySearcher {
 
 		// Now assemble our pattern into a Java-runnable pattern
 		Pattern patternCompiled = visitor.getPattern().wrap();
-		
+
 		System.out.println("Ptn: " + patternCompiled.toString());
 
 		Instant searchStart = Instant.now();
 		// Run the pattern
-		PickledCanary.runAll(monitor, program, patternCompiled, accumulator);
-		
+		PickledCanary.runAll(monitor, program, patternCompiled, range, accumulator);
+
 		Instant finish = Instant.now();
 
 		Duration assembleDuration = Duration.between(start, searchStart);
 		Duration searchDuration = Duration.between(searchStart, finish);
-		
-		System.out.println("Assembling took " + assembleDuration.getSeconds() + " seconds plus " + assembleDuration.getNano() + " nano-seconds");
-		System.out.println("Searching took " + searchDuration.getSeconds() + " seconds plus " + searchDuration.getNano() + " nano-seconds");
+
+		System.out.println("Assembling took " + assembleDuration.getSeconds() + " seconds plus " +
+			assembleDuration.getNano() + " nano-seconds");
+		System.out.println("Searching took " + searchDuration.getSeconds() + " seconds plus " +
+			searchDuration.getNano() + " nano-seconds");
 
 		monitor.setIndeterminate(false);
 	}
@@ -149,6 +156,10 @@ public class PickledCanarySearcher {
 		this.query = query;
 		this.removeDebugFlag = removeDebugFlag;
 		this.compiledPattern = NOT_COMPILED_STRING;
+	}
 
+	public void setRange(
+			List<AddressRange> newRange) {
+		this.range = newRange;
 	}
 }

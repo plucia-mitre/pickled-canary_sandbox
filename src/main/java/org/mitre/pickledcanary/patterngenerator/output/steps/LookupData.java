@@ -167,4 +167,8 @@ public record LookupData(
 		}
 		return maskedData;
 	}
+	
+	public String toString() {
+		return "LookupData[mask=" + new ByteArrayWrapper(this.mask) + ", choices=" +  this.choices.toString() + "]";
+	}
 }

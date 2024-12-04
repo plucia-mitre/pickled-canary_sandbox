@@ -71,6 +71,7 @@ public class PickledCanarySearchTableProvider extends ComponentProviderAdapter
 	private File selectedFile;
 	private File selectedCompiledFile;
 	private PickledCanarySearcher searcher;
+	private SelectionScopeWidget scope;
 
 	public PickledCanarySearchTableProvider(PickledCanarySearchTablePlugin plugin,
 			String initialValue) {
@@ -82,6 +83,7 @@ public class PickledCanarySearchTableProvider extends ComponentProviderAdapter
 
 	private void doSearch(boolean removeDebugFlag) {
 		searcher.setQuery(textArea.getText(), removeDebugFlag);
+		searcher.setRange(scope.getSearchRange());
 		saveCompiledAsAction.setEnabled(false);
 		saveCompiledAction.setEnabled(false);
 		model.doClearData();
@@ -94,6 +96,8 @@ public class PickledCanarySearchTableProvider extends ComponentProviderAdapter
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		JPanel compiledTab = new JPanel(new BorderLayout());
 		removeDebugCheckbox = new JCheckBox("Remove Debug Information", false);
+		
+		JPanel searchPanel = new JPanel(new BorderLayout());
 
 		JPanel patternPanel = new JPanel(new BorderLayout());
 		patternPanel.add(new GLabel("Pattern"), BorderLayout.NORTH);
@@ -127,7 +131,7 @@ public class PickledCanarySearchTableProvider extends ComponentProviderAdapter
 			}
 		});
 
-		patternPanel.add(new JScrollPane(textArea));
+		patternPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
 
 		JTabbedPane tabbedPanel = new JTabbedPane();
 
@@ -211,8 +215,15 @@ public class PickledCanarySearchTableProvider extends ComponentProviderAdapter
 		tabbedPanel.addTab("Compiled", Icons.get("images/checkmark_yellow.gif"), compiledTab,
 				"Show compiled pattern");
 		tabbedPanel.setMnemonicAt(0, KeyEvent.VK_2);
+		
+		JPanel filter = new JPanel(new BorderLayout());
+		filter.add(new GLabel("Selection Scope"), BorderLayout.NORTH);
+		scope = new SelectionScopeWidget(this.plugin, "Search Scope"); 
+		
+		searchPanel.add(patternPanel, BorderLayout.CENTER);
+		searchPanel.add(scope, BorderLayout.SOUTH);
 
-		splitPane.setLeftComponent(patternPanel);
+		splitPane.setLeftComponent(searchPanel);
 		splitPane.setRightComponent(tabbedPanel);
 
 		container.add(splitPane, BorderLayout.CENTER);

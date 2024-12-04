@@ -141,7 +141,7 @@ public class LookupStepBuilder {
 		public RegisterValue getRegisterValue(Register register) {
 			return context.getRegisterValue(register);
 		}
-	};
+	}
 	
 	// Convert the context from the pattern into form expected by the solver
 	private int[] convertContext(RegisterValue context) {

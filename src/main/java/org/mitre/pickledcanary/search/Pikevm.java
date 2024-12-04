@@ -17,6 +17,7 @@ import org.mitre.pickledcanary.patterngenerator.output.steps.AnyByte;
 import org.mitre.pickledcanary.patterngenerator.output.steps.AnyByteSequence;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Byte;
 
+import ghidra.program.model.address.Address;
 import ghidra.program.model.mem.MemBuffer;
 import ghidra.program.model.mem.MemoryAccessException;
 import ghidra.util.task.TaskMonitor;
@@ -38,6 +39,7 @@ public class Pikevm {
 	protected final boolean doDotStar;
 	protected int sp = 0;
 	protected int spOfLastAddedThread = -1;
+	protected Address max = null;
 
 	public Pikevm(Pattern pattern, MemBuffer input, TaskMonitor monitor) {
 		this.states = new PikevmStates();
@@ -47,7 +49,19 @@ public class Pikevm {
 
 		this.doDotStar = this.startsWithDotStar();
 	}
-	
+
+	/**
+	 * Set the max address that should be searched.
+	 * 
+	 * Implementation detail: Since we often process a "match" step one byte after the end of a
+	 * match this function will add one to the given address before it's stored.
+	 * 
+	 * @param max
+	 */
+	public void setMaxAddress(Address max) {
+		this.max = max.add(1);
+	}
+
 	private boolean startsWithDotStar() {
 		boolean startsWithDotStar = true;
 		Pattern dotStar = Pattern.getDotStar().append(Pattern.getSaveStart());
@@ -106,6 +120,12 @@ public class Pikevm {
 				this.input.getByte(Math.max(0, sp - 1));
 			} catch (MemoryAccessException e) {
 				break;
+			}
+
+			if (this.max != null) {
+				if (this.input.getAddress().add(sp).compareTo(this.max) > 0) {
+					break;
+				}
 			}
 
 			while (true) {
