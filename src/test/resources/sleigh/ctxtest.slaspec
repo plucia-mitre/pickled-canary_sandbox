@@ -88,6 +88,14 @@ dest: reloc is simm4 [reloc = (simm4 * 2) + inst_next;] { export *[ram]:4 reloc;
 
 :And operand1, operand2 is opcode=0x0B & operand1 & operand2 [enc = 2; globalset(inst_next, enc);] { local tmp = operand2 & operand1; operand1 = ~tmp;}
 
+# Ambiguous context validity:
+# Three different encodings with the same instruction string, each of which are only valid in certain contexts
+:Truncate operand1 is opcode=0x15 & operand1 & enc=0 { operand1 = operand1 & 0xF; }
+
+:Truncate operand1 is opcode=0x16 & operand1 & enc=1 { operand1 = operand1 & 0xFF; }
+
+:Truncate operand1 is opcode=0x17 & operand1 & enc=2 { operand1 = operand1 & 0xFFF; }
+
 # Ambiguous global context change from wildcard:
 # When the second operand of an Add instruction string is wildcarded, the global context change is ambiguous
 # We must fork the pattern in this case

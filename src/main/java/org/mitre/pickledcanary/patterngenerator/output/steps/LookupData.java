@@ -186,7 +186,7 @@ public record LookupData(
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = 23;
 		result = prime * result + Arrays.hashCode(mask);
 		result = prime * result + Objects.hash(choices);
 		return result;

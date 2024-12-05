@@ -110,176 +110,393 @@ public class ContextTest extends PickledCanaryTest {
 			"Add R1,R2\r\n"
 			+ "And R1,`Q1`";
 
-	private static final String stepsForNoOrContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
-	private static final String noOrContext2Pattern = 
+	//
+	private static final String stepsForDedupNoOrContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
+	private static final String dedupNoOrContext2Pattern = 
 			"Add R1,R2\r\n"
 			+ "Not R1\r\n"
 			+ "Mov R2,R4\r\n"
 			+ "Not R2\r\n"
 			+ "Alloc 0";
 
-	private static final String stepsForNoOrContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
-	private static final String noOrContext3Pattern = 
+	private static final String stepsForDedupNoOrContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
+	private static final String dedupNoOrContext3Pattern = 
 			"Add R1,R2\r\n"
 			+ "And R1,R2\r\n"
 			+ "Mov R2,R4\r\n"
 			+ "And R1,R2\r\n"
 			+ "Alloc 0";
 
-	private static final String stepsForNoOrWildcardContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q2\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
-	private static final String noOrWildcardContext2Pattern = 
+	private static final String stepsForDedupNoOrWildcardContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q2\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
+	private static final String dedupNoOrWildcardContext2Pattern = 
 			"Add R1,R2\r\n"
 			+ "Add R1,`Q1`\r\n"
 			+ "Mov R2,R4\r\n"
 			+ "Add R1,`Q2`\r\n"
 			+ "Alloc 0";
 
-	private static final String stepsForNoOrWildcardContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
-	private static final String noOrWildcardContext3Pattern = 
+	private static final String stepsForDedupNoOrWildcardContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
+	private static final String dedupNoOrWildcardContext3Pattern = 
 			"Add R1,R2\r\n"
 			+ "And R1,`Q1`\r\n"
 			+ "Mov R2,R4\r\n"
 			+ "And R1,`Q2`\r\n"
 			+ "Alloc 0";
 
-	private static final String stepsForOr2Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForDedupOr2Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr2Context2OutPattern = 
+			"Not R1\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`END_OR`\r\n"
+			+ "Mov R1,R3";
+
+	private static final String stepsForDedupOr2Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr2Context3OutPattern = 
+			"And R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`END_OR`\r\n"
+			+ "Mov R1,R3";
+
+	private static final String stepsForDedupOr2WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr2WildcardContext2OutPattern = 
+			"Add R1,`Q1`\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`END_OR`\r\n"
+			+ "Mov R1,R3";
+
+	private static final String stepsForDedupOr2WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr2WildcardContext3OutPattern = 
+			"And R1,`Q1`\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`END_OR`\r\n"
+			+ "Mov R1,R3";
+
+	private static final String stepsForDedupOr3Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr3Context2OutPattern = 
+			"Not R1\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr3Context3OutPattern = 
+			"And R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr3WildcardContext2OutPattern = 
+			"Add R1,`Q1`\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String dedupOr3WildcardContext3OutPattern = 
+			"And R1,`Q1`\r\n"
+			+ "`START_OR`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr2Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr2Context2InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Not R1\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr2Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr2Context3InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "And R1,R2\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr2WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr2WildcardContext2InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Add R1,`Q1`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr2WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr2WildcardContext3InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "And R1,`Q1`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr3Context2InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Not R1\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr3Context3InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "And R1,R2\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr3WildcardContext2InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "Add R1,`Q1`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+
+	private static final String stepsForDedupOr3WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String dedupOr3WildcardContext3InPattern = 
+			"Add R1,R2\r\n"
+			+ "`START_OR`\r\n"
+			+ "And R1,`Q1`\r\n"
+			+ "Mov R2,R4\r\n"
+			+ "`OR`\r\n"
+			+ "Alloc 0\r\n"
+			+ "`OR`\r\n"
+			+ "Mov R1,R3\r\n"
+			+ "`END_OR`\r\n"
+			+ "Add R2,R3";
+	
+	private static final String stepsForNoOrContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":10,\"type\":\"SPLIT\",\"dest1\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":8,\"type\":\"SPLIT\",\"dest1\":6},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":12},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":12},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String noOrContext2Pattern = 
+			"Add R1,R2\r\n"
+			+ "Not R1\r\n"
+			+ "Truncate R1\r\n"
+			+ "Not R2\r\n"
+			+ "Truncate R2";
+
+	private static final String stepsForNoOrContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[3,12,14],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[6,8,10],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String noOrContext3Pattern = 
+			"Add R1,R2\r\n"
+			+ "And R1,R2\r\n"
+			+ "Truncate R1\r\n"
+			+ "And R1,R2\r\n"
+			+ "Truncate R2";
+
+	private static final String stepsForNoOrWildcardContext2Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":10,\"type\":\"SPLIT\",\"dest1\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q2\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":8,\"type\":\"SPLIT\",\"dest1\":6},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[17,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":12},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[17,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":12},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String noOrWildcardContext2Pattern = 
+			"Add R1,R2\r\n"
+			+ "Add R1,`Q1`\r\n"
+			+ "Shift R1,R1\r\n"
+			+ "Add R1,`Q2`\r\n"
+			+ "Shift R2,R2";
+
+	private static final String stepsForNoOrWildcardContext3Pattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[3,12,14],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q2\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[6,8,10],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":16},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String noOrWildcardContext3Pattern = 
+			"Add R1,R2\r\n"
+			+ "And R1,`Q1`\r\n"
+			+ "Truncate R1\r\n"
+			+ "And R1,`Q2`\r\n"
+			+ "Truncate R2";
+
+	private static final String stepsForOr2Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or2Context2OutPattern = 
 			"Not R1\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`END_OR`\r\n"
 			+ "Mov R1,R3";
 
-	private static final String stepsForOr2Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr2Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":11},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or2Context3OutPattern = 
 			"And R1,R2\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`END_OR`\r\n"
 			+ "Mov R1,R3";
 
-	private static final String stepsForOr2WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr2WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or2WildcardContext2OutPattern = 
 			"Add R1,`Q1`\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Shift R1,R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`END_OR`\r\n"
 			+ "Mov R1,R3";
 
-	private static final String stepsForOr2WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":5,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr2WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":11},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or2WildcardContext3OutPattern = 
 			"And R1,`Q1`\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`END_OR`\r\n"
 			+ "Mov R1,R3";
 
-	private static final String stepsForOr3Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr3Context2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9,11],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or3Context2OutPattern = 
 			"Not R1\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
-			+ "Alloc 0\r\n"
+			+ "Truncate R2\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr3Context3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9,11,13,15],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":17},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or3Context3OutPattern = 
 			"And R1,R2\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
-			+ "Alloc 0\r\n"
+			+ "Truncate R2\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr3WildcardContext2OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9,11],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[17,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[17,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or3WildcardContext2OutPattern = 
 			"Add R1,`Q1`\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Shift R1,R1\r\n"
 			+ "`OR`\r\n"
-			+ "Alloc 0\r\n"
+			+ "Shift R2,R2\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":9},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
+	private static final String stepsForOr3WildcardContext3OutPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,5,7,9,11,13,15],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":17},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[16,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":3}";
 	private static final String or3WildcardContext3OutPattern = 
 			"And R1,`Q1`\r\n"
 			+ "`START_OR`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
-			+ "Alloc 0\r\n"
+			+ "Truncate R2\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr2Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr2Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":9,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":7,\"type\":\"SPLIT\",\"dest1\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":11},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or2Context2InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "Not R1\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr2Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr2Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":11,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[4,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or2Context3InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "And R1,R2\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr2WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr2WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":9,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":7,\"type\":\"SPLIT\",\"dest1\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":11},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or2WildcardContext2InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "Add R1,`Q1`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Shift R1,R1\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr2WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":6,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":8},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr2WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dest2\":11,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[4,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or2WildcardContext3InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "And R1,`Q1`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Mov R1,R3\r\n"
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr3Context2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,9,11],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,7]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,8]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dest2\":7,\"type\":\"SPLIT\",\"dest1\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or3Context2InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "Not R1\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`OR`\r\n"
@@ -287,12 +504,12 @@ public class ContextTest extends PickledCanaryTest {
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr3Context3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,11,13],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,9]},{\"operands\":[],\"value\":[1,11]},{\"operands\":[],\"value\":[16,10]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[4,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":15},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or3Context3InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "And R1,R2\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`OR`\r\n"
@@ -300,12 +517,12 @@ public class ContextTest extends PickledCanaryTest {
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr3WildcardContext2InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,9,11],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":7,\"type\":\"SPLIT\",\"dest1\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":13},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or3WildcardContext2InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "Add R1,`Q1`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Shift R1,R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`OR`\r\n"
@@ -313,12 +530,12 @@ public class ContextTest extends PickledCanaryTest {
 			+ "`END_OR`\r\n"
 			+ "Add R2,R3";
 
-	private static final String stepsForOr3WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,6,8],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[19,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":10},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":4}";
+	private static final String stepsForOr3WildcardContext3InPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"dests\":[2,11,13],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,9]},{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,11]}],\"mask\":[240,255]},{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[240,0]}],\"value\":[0,10]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"dests\":[4,7,9],\"type\":\"SPLITMULTI\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,21]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[18,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":15},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,23]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,22]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[2,6]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5}";
 	private static final String or3WildcardContext3InPattern = 
 			"Add R1,R2\r\n"
 			+ "`START_OR`\r\n"
 			+ "And R1,`Q1`\r\n"
-			+ "Mov R2,R4\r\n"
+			+ "Truncate R1\r\n"
 			+ "`OR`\r\n"
 			+ "Alloc 0\r\n"
 			+ "`OR`\r\n"
@@ -403,6 +620,8 @@ public class ContextTest extends PickledCanaryTest {
 		generatePatternTestHelper(illegalNoFlowContext2Pattern, "");
 	}
 
+	// The 4 tests below tests that a pattern that ends with an instruction that produces a context
+	// split will end with just the instruction and nothing else; i.e. no splits
 	@Test
 	public void testCompileLastInstructionContext2() {
 		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
@@ -434,7 +653,171 @@ public class ContextTest extends PickledCanaryTest {
 		generatePatternTestHelper(lastInstructionContext3WildcardPattern, testQueryPatternExpected + this.getCompileInfo());
 	}
 
+	
+	// The 20 tests below were the original tests to test context branching. However, when
+	// deduplication was added, these patterns deduplicated and no longer branched, so they are now
+	// the tests for deduplication.
+	@Test
+	public void testCompileDedupNoOrContext2() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupNoOrContext2Pattern + "]";
+		generatePatternTestHelper(dedupNoOrContext2Pattern, testQueryPatternExpected + this.getCompileInfo());
+	}
 
+
+	@Test
+	public void testCompileDedupNoOrContext3() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupNoOrContext3Pattern + "]";
+		generatePatternTestHelper(dedupNoOrContext3Pattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupNoOrWildcardContext2() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupNoOrWildcardContext2Pattern + "]";
+		generatePatternTestHelper(dedupNoOrWildcardContext2Pattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupNoOrWildcardContext3() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupNoOrWildcardContext3Pattern + "]";
+		generatePatternTestHelper(dedupNoOrWildcardContext3Pattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2Context2Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr2Context2OutPattern + "]";
+		generatePatternTestHelper(dedupOr2Context2OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2Context3Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr2Context3OutPattern + "]";
+		generatePatternTestHelper(dedupOr2Context3OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2WildcardContext2Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr2WildcardContext2OutPattern + "]";
+		generatePatternTestHelper(dedupOr2WildcardContext2OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2WildcardContext3Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr2WildcardContext3OutPattern + "]";
+		generatePatternTestHelper(dedupOr2WildcardContext3OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3Context2Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr3Context2OutPattern + "]";
+		generatePatternTestHelper(dedupOr3Context2OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3Context3Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr3Context3OutPattern + "]";
+		generatePatternTestHelper(dedupOr3Context3OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3WildcardContext2Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr3WildcardContext2OutPattern + "]";
+		generatePatternTestHelper(dedupOr3WildcardContext2OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3WildcardContext3Out() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr3WildcardContext3OutPattern + "]";
+		generatePatternTestHelper(dedupOr3WildcardContext3OutPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2Context2In() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr2Context2InPattern + "]";
+		generatePatternTestHelper(dedupOr2Context2InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2Context3In() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr2Context3InPattern + "]";
+		generatePatternTestHelper(dedupOr2Context3InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2WildcardContext2In() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr2WildcardContext2InPattern + "]";
+		generatePatternTestHelper(dedupOr2WildcardContext2InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr2WildcardContext3In() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr2WildcardContext3InPattern + "]";
+		generatePatternTestHelper(dedupOr2WildcardContext3InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3Context2In() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr3Context2InPattern + "]";
+		generatePatternTestHelper(dedupOr3Context2InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3Context3In() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForDedupOr3Context3InPattern + "]";
+		generatePatternTestHelper(dedupOr3Context3InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3WildcardContext2In() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr3WildcardContext2InPattern + "]";
+		generatePatternTestHelper(dedupOr3WildcardContext2InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+
+
+	@Test
+	public void testCompileDedupOr3WildcardContext3In() {
+		String testQueryPatternExpected = "{\"tables\":[" + tablesForOrPatterns + "],\"steps\":["
+				+ stepsForDedupOr3WildcardContext3InPattern + "]";
+		generatePatternTestHelper(dedupOr3WildcardContext3InPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+	
+	// The 20 tests below tests context branching with combinations of OR blocks, instructions that
+	// produce multiple contexts, and wildcards.
 	@Test
 	public void testCompileNoOrContext2() {
 		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["

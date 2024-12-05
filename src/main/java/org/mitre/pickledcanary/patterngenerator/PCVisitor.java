@@ -223,22 +223,22 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					// process each instruction within the context branch
 					Step step = currentContext.steps.get(i);
 					switch (step.getStepType()) {
-						case Step.StepType.SPLITMULTI:
+						case SPLITMULTI:
 							int nextInst = visit((SplitMulti) step);
 							i = nextInst - 1;
 							break;
-						case Step.StepType.JMP:
+						case JMP:
 							nextInst = visit((Jmp) step);
 							i = nextInst - 1;
 							break;
-						case Step.StepType.LOOKUP:
+						case LOOKUP:
 							visit(i, ((LookupStep) step).copy());
 							if (csi.noFlowContext != null) {
 								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
 								noFlowSave = null;
 							}
 							break;
-						case Step.StepType.CONTEXT:
+						case CONTEXT:
 							visit((Context) step);
 							csi.noFlowContext = null;
 							break;
@@ -265,15 +265,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			for (int i = 0; i < this.contextAwareContext.steps().size(); i++) {
 				// turn all SplitMulti blocks with only 2 destinations into a Split block
 				Step nextStep = this.contextAwareContext.steps().get(i);
-				if (nextStep.getStepType() == Step.StepType.SPLITMULTI) {
-					// TODO: move to deduplication
-//					SplitMulti sm = (SplitMulti) nextStep;
-//					if (sm.getDests().size() == 2) {
-//						Split newSplit = new Split(sm.getDests().get(0));
-//						newSplit.setDest2(sm.getDests().get(1));
-//						this.outputContext.steps().set(i, newSplit);
-//					}
-				} else if (nextStep.getStepType() == Step.StepType.JMP) {
+				if (nextStep.getStepType() == Step.StepType.JMP) {
 					// all jumps should go to the end of the pattern
 					((Jmp) nextStep).setDest(this.contextAwareContext.steps().size());
 				}
@@ -518,29 +510,35 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 	};
 
+	/**
+	 * After the pattern is passed through the second visitor to make the pattern context aware,
+	 * the pattern may have several duplicate branches. This third step removes all duplicate
+	 * branches.
+	 */
 	private class PathDeduplicator {
-		
+
 		private class InstructionNode {
-			private Step step;
-			private LinkedHashSet<InstructionNode> children;
+			private Step step; // the instruction of the node
+			private ArrayList<InstructionNode> children; // instructions that can be executed after current instruction
 			
-			private int branchHashCode;
-			private int newStepsIdx;
-			private boolean doJump;
+			// used for deduplication
+			private int newStepsIdx; // the index of this node in the deduplicated list of steps
+			private boolean doJump; // true if next step is duplicate
 			
+			/**
+			 * Represents a node in the deduplication tree.
+			 * @param step an instruction to execute
+			 */
 			private InstructionNode(Step step) {
 				this.step = step;
-				children = new LinkedHashSet<>();
+				children = new ArrayList<>();
 				doJump = false;
 			}
 
 			@Override
 			public int hashCode() {
 				final int prime = 31;
-				int result = 1;
-				result = prime * result +
-					Objects.hash(step, children);
-				branchHashCode = result;
+				int result = prime + Objects.hash(step, children);
 				return result;
 			}
 
@@ -558,105 +556,181 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 		
+		/**
+		 * Remove duplicate branches in the pattern.
+		 * 
+		 * Steps to deduplicate:
+		 * 1. Generate a tree out of all the steps in the pattern where each node is an instruction
+		 * to execute. The children of each node are the next steps that can be executed.
+		 * 2. When generating the tree, sometimes a next step can get added to the children more
+		 * than once, so remove all duplicate next steps. We now have a directed acyclic graph.
+		 * 3. The hash code of each node represents the content of the current step and all child
+		 * steps down to the leaves. This makes up a branch. In the third step, duplicate branches
+		 * are removed by traversing each node and ignoring branches that have already been seen.
+		 * @param inputContext the input pattern
+		 * @return deduplicated pattern
+		 */
 		public PatternContext deduplicatePaths(PatternContext inputContext) {
+			// tree must have a root, so we add a filler step; otherwise, if pattern starts with OR
+			// block, there will not be a root of the tree
 			InstructionNode root = new InstructionNode(new LookupStep("ROOT", -1, -1));
 			generateTree(0, root, inputContext.steps);
-//			printTree(0, root);
+			removeDuplicateChildren(root);
+			if (PickledCanary.DEBUG) {
+				System.out.println("Deduplication tree:");
+				printTree(0, root);
+			}
 			ArrayList<Step> newSteps = deduplicateTree(root);
 			return new PatternContext(newSteps, inputContext.tables);
 		}
 		
+		/**
+		 * Generates the DAG from the list of steps to allow for deduplication. Splits and jumps
+		 * are removed, and the step that is split or jumped to is placed in the children field.
+		 * @param idx current step to process
+		 * @param parent the previous step
+		 * @param steps all the steps in the pattern
+		 */
 		private void generateTree(int idx, InstructionNode parent, List<Step> steps) {
 			if (idx >= steps.size()) {
+				// we've reached the end of a branch; no more steps to process on this branch
 				return;
 			}
 			Step step = steps.get(idx);
 			switch (step.getStepType()) {
-				case Step.StepType.SPLITMULTI:
+				// for splits or jumps, just go to the next step(s)
+				case SPLITMULTI:
 					SplitMulti splitMulti = (SplitMulti) step;
 					for (int dest : splitMulti.getDests()) {
 						generateTree(dest, parent, steps);
 					}
 					break;
-				case Step.StepType.JMP:
+				case JMP:
 					generateTree(((Jmp) step).getDest(), parent, steps);
 					break;
 				default:
+					// for all other steps, add a node to the tree and go to the next step
 					InstructionNode node = new InstructionNode(steps.get(idx));
 					generateTree(idx + 1, node, steps);
 					parent.children.add(node);
 			}
 		}
 		
+		/**
+		 * Remove children under a node that are the same.
+		 * @param node node to check for similar children
+		 */
+		private void removeDuplicateChildren(InstructionNode node) {
+			LinkedHashSet<InstructionNode> set = new LinkedHashSet<>(node.children);
+			node.children.clear();
+			node.children.addAll(set);
+			for (InstructionNode child : node.children) {
+				removeDuplicateChildren(child);
+			}
+		}
+		
 		private void printTree(int indent, InstructionNode node) {
-			System.out.println("    ".repeat(indent) + node.branchHashCode + ": " + node.step.toString());
+			System.out.println("    ".repeat(indent) + ": " + node.step.toString());
 			for (InstructionNode child : node.children) {
 				printTree(indent + 1, child);
 			}
 		}
 		
+		/**
+		 * Remove branches that are the same by traversing through each node and ignoring branches
+		 * that we have already seen.
+		 * @param root the DAG to deduplicate
+		 * @return a deduplicated list of steps
+		 */
 		private ArrayList<Step> deduplicateTree(InstructionNode root) {
-			root.hashCode();
-			HashMap<Integer, Integer> hashToIdx = new HashMap<>();
+			HashMap<InstructionNode, Integer> hashToIdx = new HashMap<>();
 			ArrayList<Step> newSteps = new ArrayList<>();
-			deduplicateTree(root, newSteps, hashToIdx);
-			newSteps.removeFirst();
+			deduplicateTree(root, newSteps, hashToIdx); // the actual deduplication happens here
+			newSteps.removeFirst(); // remove the filler step
+			
+			// if the last steps is a jump to the end, that is useless; remove it
 			Step lastStep = newSteps.getLast();
 			if (lastStep.getStepType() == Step.StepType.JMP && ((Jmp) lastStep).getDest() == -1) {
 				newSteps.removeLast();
 			}
+			
+			// resolve the destinations for splits and jumps
 			for (int i = 0; i < newSteps.size(); i++) {
 				Step step = newSteps.get(i);
 				switch (step.getStepType()) {
-					case Step.StepType.JMP:
+					case JMP:
 						Jmp jmp = (Jmp) step;
 						if (jmp.getDest() == -1) {
+							// -1 signifies jump to the end
 							jmp.setDest(newSteps.size());
 						} else {
+							// otherwise, we need to subtract 1 from each jump to take into account
+							// filler step
 							jmp.setDest(jmp.getDest() - 1);
 						}
 						break;
-					case Step.StepType.SPLITMULTI:
+					case SPLITMULTI:
 						List<Integer> dests = ((SplitMulti) step).getDests();
 						if (dests.size() == 2) {
+							// if there are 2 destinations, SplitMulti can become Split
+							// again, subtract 1 to take into account filler step
 							newSteps.set(i, new Split(dests.get(0) - 1, dests.get(1) - 1));
 						} else {
 							SplitMulti splitMultiNew = new SplitMulti();
 							for (int dest : dests) {
+								// -1 to take into account filler step
 								splitMultiNew.addDest(dest - 1);
 							}
 							newSteps.set(i, splitMultiNew);
 						}
+						break;
+					default:
+						// do nothing
 				}
 			}
 			return newSteps;
 		}
 		
-		private void deduplicateTree(InstructionNode branch, ArrayList<Step> newSteps, HashMap<Integer, Integer> hashToIdx) {
-			if (hashToIdx.keySet().contains(branch.branchHashCode)) {
-				branch.newStepsIdx = hashToIdx.get(branch.branchHashCode);
+		/**
+		 * The actual method that deduplicates branches.
+		 * @param branch current branch to process
+		 * @param newSteps list of steps where deduplicated output is written to
+		 * @param hashToIdx map to keep track of the branches that we have already seen
+		 */
+		private void deduplicateTree(InstructionNode branch, ArrayList<Step> newSteps, HashMap<InstructionNode, Integer> hashToIdx) {
+			if (hashToIdx.keySet().contains(branch)) {
+				// we have already seen this branch, which means this branch is a duplicate; we
+				// will point the next step to be the branch that we've already seen
+				branch.newStepsIdx = hashToIdx.get(branch);
 				branch.doJump = true;
 				return;
 			}
 			
-			hashToIdx.put(branch.branchHashCode, newSteps.size());
+			// we have never seen this branch before; add to list of steps
+			hashToIdx.put(branch, newSteps.size());
 			branch.newStepsIdx = newSteps.size();
 			newSteps.add(branch.step);
+			
 			switch (branch.children.size()) {
 				case 0:
+					// if there are no children, we are at the end of a branch, so jump to the end
 					newSteps.add(new Jmp(-1));
 					break;
 				case 1:
+					// there only one next step, so no need to have a split
 					deduplicateTree(branch.children.getFirst(), newSteps, hashToIdx);
 					if (branch.children.getFirst().doJump) {
-						newSteps.add(new Jmp(hashToIdx.get(branch.children.getFirst().branchHashCode)));
+						// if child branch is duplicated, just jump to the branch already seen
+						newSteps.add(new Jmp(hashToIdx.get(branch.children.getFirst())));
 					}
 					break;
 				default:
+					// 2 or more children, so split is required
 					SplitMulti splitMulti = new SplitMulti();
 					newSteps.add(splitMulti);
 					for (InstructionNode child : branch.children) {
 						deduplicateTree(child, newSteps, hashToIdx);
+						// add the appropriate location to jump to
 						splitMulti.addDest(child.newStepsIdx);
 					}
 			}
@@ -1137,17 +1211,19 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.contextVisitor.makeContextAware();
 		outputContext = this.pathDeduplicator.deduplicatePaths(contextVisitor.contextAwareContext);
 		
-		System.out.println("initial pattern");
-		for (int i = 0; i < currentContext.steps.size(); i++) {
-			System.out.println(i + ": " + currentContext.steps.get(i));
-		}
-		System.out.println("context pattern");
-		for (int i = 0; i < contextVisitor.contextAwareContext.steps.size(); i++) {
-			System.out.println(i + ": " + contextVisitor.contextAwareContext.steps.get(i));
-		}
-		System.out.println("final pattern");
-		for (int i = 0; i < outputContext.steps.size(); i++) {
-			System.out.println(i + ": " + outputContext.steps.get(i));
+		if (PickledCanary.DEBUG) {
+			System.out.println("initial pattern");
+			for (int i = 0; i < currentContext.steps.size(); i++) {
+				System.out.println(i + ": " + currentContext.steps.get(i));
+			}
+			System.out.println("context pattern");
+			for (int i = 0; i < contextVisitor.contextAwareContext.steps.size(); i++) {
+				System.out.println(i + ": " + contextVisitor.contextAwareContext.steps.get(i));
+			}
+			System.out.println("final pattern");
+			for (int i = 0; i < outputContext.steps.size(); i++) {
+				System.out.println(i + ": " + outputContext.steps.get(i));
+			}
 		}
 
 		monitor.setIndeterminate(false);
