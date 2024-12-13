@@ -24,9 +24,7 @@ public class ContextTest extends PickledCanaryTest {
 	private static final String ambiguousContextPattern = 
 			"Add R1, `Q1`\r\n"
 			+ "Shift R1, R1";
-
 	private static final String tablesForAmbiguousContextPattern = "{\"R2\":[{\"value\":[1],\"mask\":[15]}],\"R3\":[{\"value\":[2],\"mask\":[15]}],\"R4\":[{\"value\":[3],\"mask\":[15]}],\"R1\":[{\"value\":[0],\"mask\":[15]}]}";
-
 	private static final String stepsForAmbiguousContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"var_id\":\"Q1\",\"type\":\"Field\",\"table_id\":0,\"mask\":[15,0]}],\"value\":[0,12]},{\"operands\":[{\"expression\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":false,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}},\"var_id\":\"Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"value\":[0,13]}],\"mask\":[240,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextBasedBranchPattern = 
@@ -34,9 +32,6 @@ public class ContextTest extends PickledCanaryTest {
 			+ "`ANY_BYTES{0,4}`\r\n"
 			+ "`Q1:`\r\n"
 			+ "Add R1, R1";
-
-	private static final String tablesForContextBasedBranchPattern = "";
-
 	private static final String stepsForContextBasedBranchPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[{\"expression\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Add\",\"children\":{\"left\":{\"op\":\"Mult\",\"children\":{\"left\":{\"op\":\"OperandValue\",\"offset\":0,\"child\":{\"op\":\"TokenField\",\"value\":{\"bitend\":3,\"shift\":0,\"signbit\":true,\"bitstart\":0,\"byteend\":0,\"bigendian\":false,\"bytestart\":0}}},\"right\":{\"op\":\"ConstantValue\",\"value\":2}}},\"right\":{\"op\":\"ContextField\",\"value\":{\"bitend\":31,\"shift\":0,\"signbit\":false,\"bitstart\":28,\"byteend\":3,\"bytestart\":3}}}},\"right\":{\"op\":\"EndInstructionValue\"}}},\"var_id\":\":Q1\",\"type\":\"Scalar\",\"mask\":[15,0]}],\"context\":[2,0],\"value\":[0,14]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 0 End: 4 Interval: 1 From: Token from line #2: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{0,4}`\",\"min\":0,\"max\":4,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"type\":\"LABEL\",\"value\":\"Q1\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,12]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextValidityPattern = 
@@ -44,9 +39,6 @@ public class ContextTest extends PickledCanaryTest {
 			+ "Unset\r\n"
 			+ "Set\r\n"
 			+ "Unset";
-
-	private static final String tablesForContextValidityPattern = "";
-
 	private static final String stepsForContextValidityPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,15]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,16]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,15]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,16]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String contextAnnotationPattern = 
@@ -56,9 +48,6 @@ public class ContextTest extends PickledCanaryTest {
 			+ "`\r\n"
 			+ "`ANY_BYTES{2,2}`\r\n"
 			+ "Shift R1, R1";
-
-	private static final String tablesForContextAnnotationPattern = "";
-
 	private static final String stepsForContextAnnotationPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,17]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"},{\"note\":\"AnyBytesNode Start: 2 End: 2 Interval: 1 From: Token from line #5: Token type: PICKLED_CANARY_COMMAND data: `ANY_BYTES{2,2}`\",\"min\":2,\"max\":2,\"interval\":1,\"type\":\"ANYBYTESEQUENCE\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,18]}],\"mask\":[255,255]}],\"type\":\"LOOKUP\"}";
 
 	private static final String noflowContextPattern = 
@@ -66,11 +55,24 @@ public class ContextTest extends PickledCanaryTest {
 			+ "LoadE R1, 0xaaaa\r\n"
 			+ "Extend\r\n"
 			+ "LoadE R1, 0xbbbb";
-
-	private static final String tablesForNoflowContextPattern = "";
-
 	private static final String stepsForNoflowContextPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,187,187]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"}";
 
+	private static final String oneEncodingNoflowPattern =
+			"ExtendX\r\n"
+			+ "LoadX R1, 0xaaaa";
+	private static final String stepsForOneEncodingNoflowPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,24]},{\"operands\":[],\"value\":[0,25]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,26,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":5},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,27,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"}";
+	
+	private static final String noflowOrBlockPattern = 
+			"Extend\r\n"
+			+ "`START_OR`\r\n"
+			+ "Alloc 0x1\r\n"
+			+ "`OR`\r\n"
+			+ "LoadE R1, 0xaaaa\r\n"
+			+ "Extend\r\n"
+			+ "Alloc 0x0\r\n"
+			+ "`END_OR`";
+	private static final String stepsForNoflowOrBlockPattern = "{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"dest2\":4,\"type\":\"SPLIT\",\"dest1\":2},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[1,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"},{\"type\":\"JMP\",\"dest\":7},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,20,170,170]}],\"mask\":[240,255,255,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,19]}],\"mask\":[0,255]}],\"type\":\"LOOKUP\"},{\"data\":[{\"type\":\"MaskAndChoose\",\"choices\":[{\"operands\":[],\"value\":[0,0]}],\"mask\":[15,255]}],\"type\":\"LOOKUP\"}";
+	
 	private static final String illegalNoFlowContextPattern = 
 			"Extend\r\n"
 			+ "`START_OR`"
@@ -584,30 +586,45 @@ public class ContextTest extends PickledCanaryTest {
 
 	@Test
 	public void testCompileContextBasedBranchPattern() {
-		String testQueryPatternExpected = "{\"tables\":[" + tablesForContextBasedBranchPattern + "],\"steps\":["
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
 				+ stepsForContextBasedBranchPattern + "]";
 		generatePatternTestHelper(contextBasedBranchPattern, testQueryPatternExpected + this.getCompileInfo(this.program.getMinAddress().add(8)), this.program.getMinAddress().add(8));
 	}
 
 	@Test
 	public void testCompileContextValidityPattern() {
-		String testQueryPatternExpected = "{\"tables\":[" + tablesForContextValidityPattern + "],\"steps\":["
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
 				+ stepsForContextValidityPattern + "]";
 		generatePatternTestHelper(contextValidityPattern, testQueryPatternExpected + this.getCompileInfo());
 	}
 
 	@Test
 	public void testCompileContextAnnotationPattern() {
-		String testQueryPatternExpected = "{\"tables\":[" + tablesForContextAnnotationPattern + "],\"steps\":["
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
 				+ stepsForContextAnnotationPattern + "]";
 		generatePatternTestHelper(contextAnnotationPattern, testQueryPatternExpected + this.getCompileInfo());
 	}
 
 	@Test
 	public void testCompileNoflowContextPattern() {
-		String testQueryPatternExpected = "{\"tables\":[" + tablesForNoflowContextPattern + "],\"steps\":["
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
 				+ stepsForNoflowContextPattern + "]";
 		generatePatternTestHelper(noflowContextPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+	
+	// ExtendX instruction generates 2 encodings; one produces a noflow context while the other does not change context
+	@Test
+	public void testCompileOneEncodingNoflowPattern() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForOneEncodingNoflowPattern + "]";
+		generatePatternTestHelper(oneEncodingNoflowPattern, testQueryPatternExpected + this.getCompileInfo());
+	}
+	
+	@Test
+	public void testCompileNoflowOrBlockPattern() {
+		String testQueryPatternExpected = "{\"tables\":[" + emptyTable + "],\"steps\":["
+				+ stepsForNoflowOrBlockPattern + "]";
+		generatePatternTestHelper(noflowOrBlockPattern, testQueryPatternExpected + this.getCompileInfo());
 	}
 	
 	@Test (expected=QueryParseException.class)

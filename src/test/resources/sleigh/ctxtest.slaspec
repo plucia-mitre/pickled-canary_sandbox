@@ -131,3 +131,15 @@ destC: reloc is simm4 [off = 2; reloc = (simm4 * 2) + off + inst_next;] { export
 :Extend is opcode=0x13 & ext=0 [ext = 1; globalset(inst_next, ext);] {}
 
 :LoadE operand1, imm16 is opcode=0x14 & operand1 & ext=1 ; imm16 { operand1 = imm16; }
+
+# Noflow global context change:
+# ExtendX instruction has two encodings: one that sets a noflow context and one
+# that does not change context. LoadX also contains two encodings, with one valid
+# only when the noflow context is set and one valid when it is not set
+:ExtendX is opcode=0x18 & ext=0 [ext = 1; globalset(inst_next, ext);] {}
+
+:ExtendX is opcode=0x19 & ext=0 {}
+
+:LoadX operand1, imm16 is opcode=0x1A & operand1 & ext=0 ; imm16 { operand1 = imm16; }
+
+:LoadX operand1, imm16 is opcode=0x1B & operand1 & ext=1 ; imm16 { operand1 = imm16; }

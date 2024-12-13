@@ -157,7 +157,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		protected Stack<Integer> contextOrStack; // tracks where the start of the split steps
 		protected PatternContext contextAwareContext; // contains the generated pattern steps
 		protected RegisterValue asmCurrentContext; // current context used for assembling instructions
-		protected RegisterValue noFlowSave = null;
+		protected RegisterValue noFlowSave = null; // the context that should be reverted to in a noflow situation
 		
 		private ResultMap variantCtx;
 		
@@ -181,16 +181,17 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		};
 		
-		/**
-		 * Represents the start of a branch in the generated pattern.
-		 * @param context context at the start of the branch
-		 * @param startIdx index of the output of the first visitor where the first step of the branch begins
-		 */
 		private class ContextStackItem {
 			RegisterValue context;
 			RegisterValue noFlowContext;
 			int startIdx;
-			
+		
+			/**
+			 * Represents the start of a branch in the generated pattern.
+			 * @param context context at the start of the branch
+			 * @param noFlowContext the context that should be reverted to if the start context is a noflow context; null if start context is not noflow
+			 * @param startIdx index of the output of the first visitor where the first step of the branch begins
+			 */
 			private ContextStackItem(RegisterValue context, RegisterValue noFlowContext, int startIdx) {
 				this.context = context;
 				this.noFlowContext = noFlowContext;
@@ -198,7 +199,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
-		ContextVisitor() {
+		public ContextVisitor() {
 //			this.futureContexts = new HashMap<>();
 			this.nextContexts = new HashSet<RegisterValue>();
 			this.contextStack = new Stack<ContextStackItem>();
@@ -234,18 +235,22 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 						case LOOKUP:
 							visit(i, ((LookupStep) step).copy());
 							if (csi.noFlowContext != null) {
+								// if we are at the beginning of a branch and there is a start context, set the context
 								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								csi.noFlowContext = null;
 								noFlowSave = null;
 							}
 							break;
 						case CONTEXT:
 							visit((Context) step);
-							csi.noFlowContext = null;
+							csi.noFlowContext = null; // user overrides all contexts
 							break;
 						default:
 							visit(step);
 							if (csi.noFlowContext != null) {
+								// if we are at the beginning of a branch and there is a start context, set the context
 								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								csi.noFlowContext = null;
 								noFlowSave = null;
 							}
 					}
@@ -273,8 +278,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		// #region Visit methods
-		// Returns the index of the step in the output of the first visitor from where the next branch
-		// should begin
+		/**
+		 * Handles split step.
+		 * @param splitMultiStep split step to process
+		 * @return index of the step in the output of the first visitor from where the next branch
+		 * should begin
+		 */
 		private int visit(SplitMulti splitMultiStep) {
 			// when there is a split, we will process the first branch and put the other branches in a
 			// stack to process them after the first branch
@@ -287,12 +296,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return splitMultiStep.getDests().get(0);
 		}
 
-		// returns which step in the output of the first visitor to jump to in order to continue
-		// processing the current branch
+		/**
+		 * Handles jump step.
+		 * @param jmpStep jump step to process
+		 * @return step in output of the first visitor to jump to in order to continue processing the
+		 * current branch
+		 */
 		private int visit(Jmp jmpStep) {
 			return jmpStep.getDest();
 		}
 
+		/**
+		 * Handles assembly instruction step.
+		 * @param tokenIdx step number of this step in the output of the first visitor
+		 * @param lookupStep the step to process
+		 */
 		private void visit(int tokenIdx, LookupStep lookupStep) {
 			lookupStep = assembleInstruction(lookupStep);
 			if (lookupStep == null) {
@@ -302,7 +320,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 			if (nextContexts.size() == 0 || tokenIdx == currentContext.steps().size() - 1) {
 				if (noFlowSave != null) {
-					// If there are no context changes, then the next context is the same as the previous
+					// If there are no context changes and a no flow context is waiting to be reverted, then revert for next instruction
 					asmCurrentContext = handleNoFlows(noFlowSave, asmCurrentContext);
 					noFlowSave = null;
 				}
@@ -315,15 +333,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			// set the next context, and if there are additional contexts, place them on the stack, so
 			// that new branches can be created for those contexts
 			Object[] nextContexts = this.nextContexts.toArray();
-			Boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
+			// Determine if the next context is no flow
+			boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
 
 			if (hasNoFlow || noFlowSave == null) {
+				// hasNoFlow is true & noFlowSave is null -> we are encountering a noflow, so save current context and set the noflow context as next context
+				// hasNoFlow is true & noFlowSave is not null -> the previous and next contexts are noflows, original context already saved, so no need to do that
+				// hasNoFlow is false & noFlowSave is null -> nothing related to noflow is happening; just set the next global context
 				if (noFlowSave == null && hasNoFlow) {
 					noFlowSave = asmCurrentContext;
 				}
 				asmCurrentContext = (RegisterValue) nextContexts[0];
+				
 			}
 			else {
+				// revert the noflow context to the original context
 				asmCurrentContext = handleNoFlows(noFlowSave, (RegisterValue) nextContexts[0]);
 				noFlowSave = null;
 			}
@@ -338,7 +362,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
-		// Override the current context
+		/**
+		 * Handles step that allows user to override the current context.
+		 * @param contextStep context step to process
+		 */
 		private void visit(Context contextStep) {
 			for (RegisterValue contextVar: contextStep.getContextVars()) {
 				// asmCurrentContext always contains the full context register
@@ -347,11 +374,20 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
+		/**
+		 * Handles all other steps not listed above.
+		 * @param step step to process
+		 */
 		private void visit(Step step) {
 			this.contextAwareContext.steps().add(step);
 		}
 		// #endregion
 		
+		/**
+		 * Assembles an assembly instruction.
+		 * @param lookupStep the lookup step containing the instruction to assemble
+		 * @return the lookup step with the encodings results filled in
+		 */
 		private LookupStep assembleInstruction(LookupStep lookupStep) {
 			Collection<AssemblyParseResult> parses = assembler
 					.parseLine(lookupStep.getInstructionText()).stream().filter(p -> {
@@ -375,6 +411,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return lookupStep;
 		}
 
+		/**
+		 * Assembles an assembly instruction.
+		 * @param lookupStep the lookup step containing the instruction to assemble
+		 * @param parses the parsed data of the instruction to assemble
+		 * @return the lookup step with the encodings results filled in
+		 */
 		private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep,
 				Collection<AssemblyParseResult> parses) {
 
@@ -426,6 +468,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 //							}
 //							futureContexts.get(a).add(encodingContextChanges.get(a));
 						}
+						if (encodingContextChanges.map.isEmpty()) {
+							// no context changes means the current context will be the next context
+							contextVisitor.nextContexts.add(asmCurrentContext);
+						}
 					}
 				}
 				variantCtx.map.put(p, encodingCtx);
@@ -434,6 +480,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return builder.buildLookupStep();
 		}
 		
+		/**
+		 * Gets the changes to context produced by an encoding.
+		 * @param pats an instruction encoding
+		 * @param inputCtx the context used to aseemble to get the instruction encoding
+		 * @return list of context changes produced by encoding
+		 */
 		public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
 				RegisterValue inputCtx) {
 			ContextAdapter contextAdapter = new ContextAdapter(inputCtx);
@@ -482,6 +534,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
+		/**
+		 * Determines if a context is noflow.
+		 * @param currCtx the context used to produce nextCtx
+		 * @param nextCtx the context to check if it is noflow
+		 * @return true if nextCtx is nowflow; false otherwise
+		 */
 		private boolean checkNoFlow(RegisterValue currCtx, RegisterValue nextCtx) {
 			// TODO: Use cached contextreg and context variables
 			Register contextReg = language.getContextBaseRegister();
@@ -495,8 +553,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return false;
 		}
 
-		// We aren't reverting the noflow variables in the next context
-		// Instead, we update the saved context with only the variables that follow flow from the next context
+		/**
+		 * Undo the context in a noflow instruction. We aren't reverting the noflow variables in the next context.
+		 * Instead, we update the saved context with only the variables that follow flow from the next context.
+		 * @param saveCtx the context to revert to
+		 * @param nextCtx the current context
+		 * @return the context to revert to
+		 */
 		private RegisterValue handleNoFlows(RegisterValue saveCtx, RegisterValue nextCtx) {
 			// TODO: Use cached contextreg and context variables
 			Register contextReg = language.getContextBaseRegister();
