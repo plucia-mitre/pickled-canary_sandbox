@@ -156,8 +156,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		protected Stack<Integer> contextOrStack; // tracks where the start of the split steps
 		protected PatternContext contextAwareContext; // contains the generated pattern steps
 		protected RegisterValue asmCurrentContext; // current context used for assembling instructions
-		protected RegisterValue noFlowSave = null;
-
+		protected RegisterValue noFlowSave = null; // the context that should be reverted to in a noflow situation
+		
 		private ResultMap variantCtx;
 
 		private record ContextChanges(RegisterValue localCtx, AddressMap globalCtx) {}
@@ -178,8 +178,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			AddressMap() {
 				this(new HashMap<Address, RegisterValue>());
 			}
-		}
-
+		};
+		
 		/**
 		 * Represents the start of a branch in the generated pattern.
 		 * @param context context at the start of the branch
@@ -189,16 +189,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			RegisterValue context;
 			RegisterValue noFlowContext;
 			int startIdx;
-
-			private ContextStackItem(RegisterValue context, RegisterValue noFlowContext,
-					int startIdx) {
+		
+			/**
+			 * Represents the start of a branch in the generated pattern.
+			 * @param context context at the start of the branch
+			 * @param noFlowContext the context that should be reverted to if the start context is a noflow context; null if start context is not noflow
+			 * @param startIdx index of the output of the first visitor where the first step of the branch begins
+			 */
+			private ContextStackItem(RegisterValue context, RegisterValue noFlowContext, int startIdx) {
 				this.context = context;
 				this.noFlowContext = noFlowContext;
 				this.startIdx = startIdx;
 			}
 		}
 
-		ContextVisitor() {
+		public ContextVisitor() {
 			//			this.futureContexts = new HashMap<>();
 			this.nextContexts = new HashSet<RegisterValue>();
 			this.contextStack = new Stack<ContextStackItem>();
@@ -234,20 +239,20 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 						case LOOKUP:
 							visit(i, ((LookupStep) step).copy());
 							if (csi.noFlowContext != null) {
-								asmCurrentContext =
-									handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
 								noFlowSave = null;
 							}
 							break;
 						case CONTEXT:
 							visit((Context) step);
-							csi.noFlowContext = null;
+							csi.noFlowContext = null; // user overrides all contexts
 							break;
 						default:
 							visit(step);
 							if (csi.noFlowContext != null) {
-								asmCurrentContext =
-									handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								// if we are at the beginning of a branch and there is a start context, set the context
+								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+								csi.noFlowContext = null;
 								noFlowSave = null;
 							}
 					}
@@ -268,16 +273,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			for (int i = 0; i < this.contextAwareContext.steps().size(); i++) {
 				// turn all SplitMulti blocks with only 2 destinations into a Split block
 				Step nextStep = this.contextAwareContext.steps().get(i);
-				if (nextStep.getStepType() == Step.StepType.SPLITMULTI) {
-					// TODO: move to deduplication
-					//					SplitMulti sm = (SplitMulti) nextStep;
-					//					if (sm.getDests().size() == 2) {
-					//						Split newSplit = new Split(sm.getDests().get(0));
-					//						newSplit.setDest2(sm.getDests().get(1));
-					//						this.outputContext.steps().set(i, newSplit);
-					//					}
-				}
-				else if (nextStep.getStepType() == Step.StepType.JMP) {
+				if (nextStep.getStepType() == Step.StepType.JMP) {
 					// all jumps should go to the end of the pattern
 					((Jmp) nextStep).setDest(this.contextAwareContext.steps().size());
 				}
@@ -285,8 +281,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		// #region Visit methods
-		// Returns the index of the step in the output of the first visitor from where the next branch
-		// should begin
+		/**
+		 * Handles split step.
+		 * @param splitMultiStep split step to process
+		 * @return index of the step in the output of the first visitor from where the next branch
+		 * should begin
+		 */
 		private int visit(SplitMulti splitMultiStep) {
 			// when there is a split, we will process the first branch and put the other branches in a
 			// stack to process them after the first branch
@@ -301,12 +301,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return splitMultiStep.getDests().get(0);
 		}
 
-		// returns which step in the output of the first visitor to jump to in order to continue
-		// processing the current branch
+		/**
+		 * Handles jump step.
+		 * @param jmpStep jump step to process
+		 * @return step in output of the first visitor to jump to in order to continue processing the
+		 * current branch
+		 */
 		private int visit(Jmp jmpStep) {
 			return jmpStep.getDest();
 		}
 
+		/**
+		 * Handles assembly instruction step.
+		 * @param tokenIdx step number of this step in the output of the first visitor
+		 * @param lookupStep the step to process
+		 */
 		private void visit(int tokenIdx, LookupStep lookupStep) {
 			lookupStep = assembleInstruction(lookupStep);
 			if (lookupStep == null) {
@@ -316,7 +325,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 			if (nextContexts.size() == 0 || tokenIdx == currentContext.steps().size() - 1) {
 				if (noFlowSave != null) {
-					// If there are no context changes, then the next context is the same as the previous
+					// If there are no context changes and a no flow context is waiting to be reverted, then revert for next instruction
 					asmCurrentContext = handleNoFlows(noFlowSave, asmCurrentContext);
 					noFlowSave = null;
 				}
@@ -329,15 +338,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			// set the next context, and if there are additional contexts, place them on the stack, so
 			// that new branches can be created for those contexts
 			Object[] nextContexts = this.nextContexts.toArray();
-			Boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
+			// Determine if the next context is no flow
+			boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
 
 			if (hasNoFlow || noFlowSave == null) {
+				// hasNoFlow is true & noFlowSave is null -> we are encountering a noflow, so save current context and set the noflow context as next context
+				// hasNoFlow is true & noFlowSave is not null -> the previous and next contexts are noflows, original context already saved, so no need to do that
+				// hasNoFlow is false & noFlowSave is null -> nothing related to noflow is happening; just set the next global context
 				if (noFlowSave == null && hasNoFlow) {
 					noFlowSave = asmCurrentContext;
 				}
 				asmCurrentContext = (RegisterValue) nextContexts[0];
+				
 			}
 			else {
+				// revert the noflow context to the original context
 				asmCurrentContext = handleNoFlows(noFlowSave, (RegisterValue) nextContexts[0]);
 				noFlowSave = null;
 			}
@@ -354,7 +369,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
-		// Override the current context
+		/**
+		 * Handles step that allows user to override the current context.
+		 * @param contextStep context step to process
+		 */
 		private void visit(Context contextStep) {
 			for (RegisterValue contextVar : contextStep.getContextVars()) {
 				// asmCurrentContext always contains the full context register
@@ -364,11 +382,20 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
+		/**
+		 * Handles all other steps not listed above.
+		 * @param step step to process
+		 */
 		private void visit(Step step) {
 			this.contextAwareContext.steps().add(step);
 		}
 		// #endregion
-
+		
+		/**
+		 * Assembles an assembly instruction.
+		 * @param lookupStep the lookup step containing the instruction to assemble
+		 * @return the lookup step with the encodings results filled in
+		 */
 		private LookupStep assembleInstruction(LookupStep lookupStep) {
 			Collection<AssemblyParseResult> parses = assembler
 					.parseLine(lookupStep.getInstructionText())
@@ -395,6 +422,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return lookupStep;
 		}
 
+		/**
+		 * Assembles an assembly instruction.
+		 * @param lookupStep the lookup step containing the instruction to assemble
+		 * @param parses the parsed data of the instruction to assemble
+		 * @return the lookup step with the encodings results filled in
+		 */
 		private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep,
 				Collection<AssemblyParseResult> parses) {
 
@@ -443,10 +476,14 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 						for (Address a : encodingContextChanges.map.keySet()) {
 							contextVisitor.nextContexts.add(encodingContextChanges.map.get(a));
-							//							if (!futureContexts.containsKey(a)) {
-							//								futureContexts.put(a, new HashSet<>());
-							//							}
-							//							futureContexts.get(a).add(encodingContextChanges.get(a));
+//							if (!futureContexts.containsKey(a)) {
+//								futureContexts.put(a, new HashSet<>());
+//							}
+//							futureContexts.get(a).add(encodingContextChanges.get(a));
+						}
+						if (encodingContextChanges.map.isEmpty()) {
+							// no context changes means the current context will be the next context
+							contextVisitor.nextContexts.add(asmCurrentContext);
 						}
 					}
 				}
@@ -455,7 +492,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			printContextChanges(this.variantCtx);
 			return builder.buildLookupStep();
 		}
-
+		
+		/**
+		 * Gets the changes to context produced by an encoding.
+		 * @param pats an instruction encoding
+		 * @param inputCtx the context used to aseemble to get the instruction encoding
+		 * @return list of context changes produced by encoding
+		 */
 		public ContextChanges getContextChanges(DefaultAssemblyResolvedPatterns pats,
 				RegisterValue inputCtx) {
 			ContextAdapter contextAdapter = new ContextAdapter(inputCtx);
@@ -508,6 +551,12 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		}
 
+		/**
+		 * Determines if a context is noflow.
+		 * @param currCtx the context used to produce nextCtx
+		 * @param nextCtx the context to check if it is noflow
+		 * @return true if nextCtx is nowflow; false otherwise
+		 */
 		private boolean checkNoFlow(RegisterValue currCtx, RegisterValue nextCtx) {
 			// TODO: Use cached contextreg and context variables
 			Register contextReg = language.getContextBaseRegister();
@@ -521,8 +570,13 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			return false;
 		}
 
-		// We aren't reverting the noflow variables in the next context
-		// Instead, we update the saved context with only the variables that follow flow from the next context
+		/**
+		 * Undo the context in a noflow instruction. We aren't reverting the noflow variables in the next context.
+		 * Instead, we update the saved context with only the variables that follow flow from the next context.
+		 * @param saveCtx the context to revert to
+		 * @param nextCtx the current context
+		 * @return the context to revert to
+		 */
 		private RegisterValue handleNoFlows(RegisterValue saveCtx, RegisterValue nextCtx) {
 			// TODO: Use cached contextreg and context variables
 			Register contextReg = language.getContextBaseRegister();
@@ -536,29 +590,35 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 	}
 
+	/**
+	 * After the pattern is passed through the second visitor to make the pattern context aware,
+	 * the pattern may have several duplicate branches. This third step removes all duplicate
+	 * branches.
+	 */
 	private class PathDeduplicator {
 
 		private class InstructionNode {
-			private Step step;
-			private LinkedHashSet<InstructionNode> children;
-
-			private int branchHashCode;
-			private int newStepsIdx;
-			private boolean doJump;
-
+			private Step step; // the instruction of the node
+			private ArrayList<InstructionNode> children; // instructions that can be executed after current instruction
+			
+			// used for deduplication
+			private int newStepsIdx; // the index of this node in the deduplicated list of steps
+			private boolean doJump; // true if next step is duplicate
+			
+			/**
+			 * Represents a node in the deduplication tree.
+			 * @param step an instruction to execute
+			 */
 			private InstructionNode(Step step) {
 				this.step = step;
-				children = new LinkedHashSet<>();
+				children = new ArrayList<>();
 				doJump = false;
 			}
 
 			@Override
 			public int hashCode() {
 				final int prime = 31;
-				int result = 1;
-				result = prime * result +
-					Objects.hash(step, children);
-				branchHashCode = result;
+				int result = prime + Objects.hash(step, children);
 				return result;
 			}
 
@@ -575,21 +635,50 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					Objects.equals(children, other.children);
 			}
 		}
-
+		
+		/**
+		 * Remove duplicate branches in the pattern.
+		 * 
+		 * Steps to deduplicate:
+		 * 1. Generate a tree out of all the steps in the pattern where each node is an instruction
+		 * to execute. The children of each node are the next steps that can be executed.
+		 * 2. When generating the tree, sometimes a next step can get added to the children more
+		 * than once, so remove all duplicate next steps. We now have a directed acyclic graph.
+		 * 3. The hash code of each node represents the content of the current step and all child
+		 * steps down to the leaves. This makes up a branch. In the third step, duplicate branches
+		 * are removed by traversing each node and ignoring branches that have already been seen.
+		 * @param inputContext the input pattern
+		 * @return deduplicated pattern
+		 */
 		public PatternContext deduplicatePaths(PatternContext inputContext) {
+			// tree must have a root, so we add a filler step; otherwise, if pattern starts with OR
+			// block, there will not be a root of the tree
 			InstructionNode root = new InstructionNode(new LookupStep("ROOT", -1, -1));
 			generateTree(0, root, inputContext.steps);
-			//			printTree(0, root);
+			removeDuplicateChildren(root);
+			if (PickledCanary.DEBUG) {
+				System.out.println("Deduplication tree:");
+				printTree(0, root);
+			}
 			ArrayList<Step> newSteps = deduplicateTree(root);
 			return new PatternContext(newSteps, inputContext.tables);
 		}
-
+		
+		/**
+		 * Generates the DAG from the list of steps to allow for deduplication. Splits and jumps
+		 * are removed, and the step that is split or jumped to is placed in the children field.
+		 * @param idx current step to process
+		 * @param parent the previous step
+		 * @param steps all the steps in the pattern
+		 */
 		private void generateTree(int idx, InstructionNode parent, List<Step> steps) {
 			if (idx >= steps.size()) {
+				// we've reached the end of a branch; no more steps to process on this branch
 				return;
 			}
 			Step step = steps.get(idx);
 			switch (step.getStepType()) {
+				// for splits or jumps, just go to the next step(s)
 				case SPLITMULTI:
 					SplitMulti splitMulti = (SplitMulti) step;
 					for (int dest : splitMulti.getDests()) {
@@ -600,86 +689,129 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					generateTree(((Jmp) step).getDest(), parent, steps);
 					break;
 				default:
+					// for all other steps, add a node to the tree and go to the next step
 					InstructionNode node = new InstructionNode(steps.get(idx));
 					generateTree(idx + 1, node, steps);
 					parent.children.add(node);
 			}
 		}
-
+		
+		/**
+		 * Remove children under a node that are the same.
+		 * @param node node to check for similar children
+		 */
+		private void removeDuplicateChildren(InstructionNode node) {
+			LinkedHashSet<InstructionNode> set = new LinkedHashSet<>(node.children);
+			node.children.clear();
+			node.children.addAll(set);
+			for (InstructionNode child : node.children) {
+				removeDuplicateChildren(child);
+			}
+		}
+		
 		private void printTree(int indent, InstructionNode node) {
-			System.out.println(
-				"    ".repeat(indent) + node.branchHashCode + ": " + node.step.toString());
+			System.out.println("    ".repeat(indent) + node.branchHashCode + ": " + node.step.toString());
 			for (InstructionNode child : node.children) {
 				printTree(indent + 1, child);
 			}
 		}
-
+		
+		/**
+		 * Remove branches that are the same by traversing through each node and ignoring branches
+		 * that we have already seen.
+		 * @param root the DAG to deduplicate
+		 * @return a deduplicated list of steps
+		 */
 		private ArrayList<Step> deduplicateTree(InstructionNode root) {
-			root.hashCode();
-			HashMap<Integer, Integer> hashToIdx = new HashMap<>();
+			HashMap<InstructionNode, Integer> hashToIdx = new HashMap<>();
 			ArrayList<Step> newSteps = new ArrayList<>();
-			deduplicateTree(root, newSteps, hashToIdx);
-			newSteps.removeFirst();
+			deduplicateTree(root, newSteps, hashToIdx); // the actual deduplication happens here
+			newSteps.removeFirst(); // remove the filler step
+			
+			// if the last steps is a jump to the end, that is useless; remove it
 			Step lastStep = newSteps.getLast();
 			if (lastStep.getStepType() == Step.StepType.JMP && ((Jmp) lastStep).getDest() == -1) {
 				newSteps.removeLast();
 			}
+			
+			// resolve the destinations for splits and jumps
 			for (int i = 0; i < newSteps.size(); i++) {
 				Step step = newSteps.get(i);
 				switch (step.getStepType()) {
 					case JMP:
 						Jmp jmp = (Jmp) step;
 						if (jmp.getDest() == -1) {
+							// -1 signifies jump to the end
 							jmp.setDest(newSteps.size());
-						}
-						else {
+						} else {
+							// otherwise, we need to subtract 1 from each jump to take into account
+							// filler step
 							jmp.setDest(jmp.getDest() - 1);
 						}
 						break;
 					case SPLITMULTI:
 						List<Integer> dests = ((SplitMulti) step).getDests();
 						if (dests.size() == 2) {
+							// if there are 2 destinations, SplitMulti can become Split
+							// again, subtract 1 to take into account filler step
 							newSteps.set(i, new Split(dests.get(0) - 1, dests.get(1) - 1));
 						}
 						else {
 							SplitMulti splitMultiNew = new SplitMulti();
 							for (int dest : dests) {
+								// -1 to take into account filler step
 								splitMultiNew.addDest(dest - 1);
 							}
 							newSteps.set(i, splitMultiNew);
 						}
+						break;
+					default:
+						// do nothing
 				}
 			}
 			return newSteps;
 		}
-
-		private void deduplicateTree(InstructionNode branch, ArrayList<Step> newSteps,
-				HashMap<Integer, Integer> hashToIdx) {
-			if (hashToIdx.keySet().contains(branch.branchHashCode)) {
-				branch.newStepsIdx = hashToIdx.get(branch.branchHashCode);
+		
+		/**
+		 * The actual method that deduplicates branches.
+		 * @param branch current branch to process
+		 * @param newSteps list of steps where deduplicated output is written to
+		 * @param hashToIdx map to keep track of the branches that we have already seen
+		 */
+		private void deduplicateTree(InstructionNode branch, ArrayList<Step> newSteps, HashMap<InstructionNode, Integer> hashToIdx) {
+			if (hashToIdx.keySet().contains(branch)) {
+				// we have already seen this branch, which means this branch is a duplicate; we
+				// will point the next step to be the branch that we've already seen
+				branch.newStepsIdx = hashToIdx.get(branch);
 				branch.doJump = true;
 				return;
 			}
-
-			hashToIdx.put(branch.branchHashCode, newSteps.size());
+			
+			// we have never seen this branch before; add to list of steps
+			hashToIdx.put(branch, newSteps.size());
 			branch.newStepsIdx = newSteps.size();
 			newSteps.add(branch.step);
+			
 			switch (branch.children.size()) {
 				case 0:
+					// if there are no children, we are at the end of a branch, so jump to the end
 					newSteps.add(new Jmp(-1));
 					break;
 				case 1:
+					// there only one next step, so no need to have a split
 					deduplicateTree(branch.children.getFirst(), newSteps, hashToIdx);
 					if (branch.children.getFirst().doJump) {
-						newSteps.add(
-							new Jmp(hashToIdx.get(branch.children.getFirst().branchHashCode)));
+						// if child branch is duplicated, just jump to the branch already seen
+						newSteps.add(new Jmp(hashToIdx.get(branch.children.getFirst())));
 					}
 					break;
 				default:
+					// 2 or more children, so split is required
 					SplitMulti splitMulti = new SplitMulti();
 					newSteps.add(splitMulti);
 					for (InstructionNode child : branch.children) {
 						deduplicateTree(child, newSteps, hashToIdx);
+						// add the appropriate location to jump to
 						splitMulti.addDest(child.newStepsIdx);
 					}
 			}
@@ -963,21 +1095,26 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		BigInteger value = null;
 
-		// If we have a quoted string, we're dealing with the NumericUtilities#convertHexStringToMaskedValue(AtomicLong, AtomicLong, String, int, int, String) format
+		// If we have a quoted string, we're dealing with the
+		// NumericUtilities#convertHexStringToMaskedValue(AtomicLong, AtomicLong, String, int, int,
+		// String) format
 		if (valueString.startsWith("\"") || valueString.startsWith("'")) {
 			if (!valueString.endsWith(valueString.substring(0, 1))) {
 				throw new QueryParseException("Expected quoted string to end with a matching quote",
 					ctx);
 			}
 
-			String valueStringInner = valueString.substring(0, valueString.length() - 1);
+			// Remove first and last characters (the quote characters we just found above)
+			String valueStringInner = valueString.substring(1, valueString.length() - 1);
 
+			// Parse the given string to an AssemblyPatternBlock and then convert that a
+			// RegisterValue
+			// TODO: Do we need to be more sophisticated in our conversion here, especially when the
+			// input string might start with 1 and be seen as negative in the BigIntegers
 			AssemblyPatternBlock a = AssemblyPatternBlock.fromString(valueStringInner);
-
 			value = new BigInteger(a.getValsAll());
 			BigInteger mask = new BigInteger(a.getMaskAll());
 			contextVar = new RegisterValue(match.get(), value, mask);
-
 		}
 		else {
 			// Else try simpler radix based formats (with no unknown bits)
@@ -1161,18 +1298,20 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		this.visit(progContext);
 		this.contextVisitor.makeContextAware();
 		outputContext = this.pathDeduplicator.deduplicatePaths(contextVisitor.contextAwareContext);
-
-		System.out.println("initial pattern");
-		for (int i = 0; i < currentContext.steps.size(); i++) {
-			System.out.println(i + ": " + currentContext.steps.get(i));
-		}
-		System.out.println("context pattern");
-		for (int i = 0; i < contextVisitor.contextAwareContext.steps.size(); i++) {
-			System.out.println(i + ": " + contextVisitor.contextAwareContext.steps.get(i));
-		}
-		System.out.println("final pattern");
-		for (int i = 0; i < outputContext.steps.size(); i++) {
-			System.out.println(i + ": " + outputContext.steps.get(i));
+		
+		if (PickledCanary.DEBUG) {
+			System.out.println("initial pattern");
+			for (int i = 0; i < currentContext.steps.size(); i++) {
+				System.out.println(i + ": " + currentContext.steps.get(i));
+			}
+			System.out.println("context pattern");
+			for (int i = 0; i < contextVisitor.contextAwareContext.steps.size(); i++) {
+				System.out.println(i + ": " + contextVisitor.contextAwareContext.steps.get(i));
+			}
+			System.out.println("final pattern");
+			for (int i = 0; i < outputContext.steps.size(); i++) {
+				System.out.println(i + ": " + outputContext.steps.get(i));
+			}
 		}
 
 		monitor.setIndeterminate(false);

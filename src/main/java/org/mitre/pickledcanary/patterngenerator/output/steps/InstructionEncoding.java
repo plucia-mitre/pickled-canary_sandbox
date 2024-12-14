@@ -137,7 +137,7 @@ public class InstructionEncoding implements Comparable<InstructionEncoding> {
 	@Override
 	public int hashCode() {
 		final int prime = 31;
-		int result = 1;
+		int result = 17;
 		result = prime * result + Arrays.hashCode(context);
 		result = prime * result + Objects.hash(operands, value);
 		return result;
