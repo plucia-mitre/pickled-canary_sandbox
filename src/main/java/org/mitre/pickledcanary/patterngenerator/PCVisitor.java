@@ -710,7 +710,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 		
 		private void printTree(int indent, InstructionNode node) {
-			System.out.println("    ".repeat(indent) + node.branchHashCode + ": " + node.step.toString());
+			System.out.println("    ".repeat(indent) +  ": " + node.step.toString());
 			for (InstructionNode child : node.children) {
 				printTree(indent + 1, child);
 			}
