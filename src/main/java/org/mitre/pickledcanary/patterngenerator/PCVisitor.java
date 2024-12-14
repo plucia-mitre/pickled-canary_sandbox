@@ -1076,21 +1076,26 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 
 		BigInteger value = null;
 
-		// If we have a quoted string, we're dealing with the NumericUtilities#convertHexStringToMaskedValue(AtomicLong, AtomicLong, String, int, int, String) format
+		// If we have a quoted string, we're dealing with the
+		// NumericUtilities#convertHexStringToMaskedValue(AtomicLong, AtomicLong, String, int, int,
+		// String) format
 		if (valueString.startsWith("\"") || valueString.startsWith("'")) {
 			if (!valueString.endsWith(valueString.substring(0, 1))) {
 				throw new QueryParseException("Expected quoted string to end with a matching quote",
 					ctx);
 			}
 
-			String valueStringInner = valueString.substring(0, valueString.length() - 1);
+			// Remove first and last characters (the quote characters we just found above)
+			String valueStringInner = valueString.substring(1, valueString.length() - 1);
 
+			// Parse the given string to an AssemblyPatternBlock and then convert that a
+			// RegisterValue
+			// TODO: Do we need to be more sophisticated in our conversion here, especially when the
+			// input string might start with 1 and be seen as negative in the BigIntegers
 			AssemblyPatternBlock a = AssemblyPatternBlock.fromString(valueStringInner);
-
 			value = new BigInteger(a.getValsAll());
 			BigInteger mask = new BigInteger(a.getMaskAll());
 			contextVar = new RegisterValue(match.get(), value, mask);
-
 		}
 		else {
 			// Else try simpler radix based formats (with no unknown bits)
