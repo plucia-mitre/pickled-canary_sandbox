@@ -6,9 +6,10 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import org.mitre.pickledcanary.patterngenerator.output.steps.OrMultiState;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Split;
 import org.mitre.pickledcanary.patterngenerator.output.steps.SplitMulti;
 import org.mitre.pickledcanary.patterngenerator.output.steps.Step;
+import org.mitre.pickledcanary.patterngenerator.output.steps.Step.StepType;
 import org.mitre.pickledcanary.patterngenerator.output.utils.AllLookupTables;
 import org.mitre.pickledcanary.patterngenerator.output.utils.LookupStepBuilder;
 import org.mitre.pickledcanary.search.Pattern;
@@ -146,13 +148,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 	 * new branches and steps to make the pattern context aware.
 	 */
 	private class ContextVisitor {
-		// TODO: An instruction can set any address to change context. We current assume that an
-		// instruction can change the context of only the next instruction.
-		//		private final HashMap<Address, HashSet<RegisterValue>> futureContexts;
-		// contexts to apply for the next instruction -- this is a temp variable while above is being
-		// fixed
-		protected HashSet<RegisterValue> nextContexts;
-		protected Stack<ContextStackItem> contextStack; // tracks new context branches that will be handled later
+		protected Stack<BranchHead> contextStack; // tracks new context branches that will be handled later
 		protected Stack<Integer> contextOrStack; // tracks where the start of the split steps
 		protected PatternContext contextAwareContext; // contains the generated pattern steps
 		protected RegisterValue asmCurrentContext; // current context used for assembling instructions
@@ -180,23 +176,21 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 		};
 		
-		/**
-		 * Represents the start of a branch in the generated pattern.
-		 * @param context context at the start of the branch
-		 * @param startIdx index of the output of the first visitor where the first step of the branch begins
-		 */
-		private class ContextStackItem {
+		private class BranchHead {
+			LookupStep firstStep;
 			RegisterValue context;
 			RegisterValue noFlowContext;
 			int startIdx;
 		
 			/**
 			 * Represents the start of a branch in the generated pattern.
-			 * @param context context at the start of the branch
+			 * @param firstStep an instruction that should be inserted as the first instruction in the branch; null if no instruction needs to be inserted, i.e. the first instruction of the branch is located at startIdx
+			 * @param context context used to assemble the first instruction in the branch
 			 * @param noFlowContext the context that should be reverted to if the start context is a noflow context; null if start context is not noflow
 			 * @param startIdx index of the output of the first visitor where the first step of the branch begins
 			 */
-			private ContextStackItem(RegisterValue context, RegisterValue noFlowContext, int startIdx) {
+			private BranchHead(LookupStep firstStep, RegisterValue context, RegisterValue noFlowContext, int startIdx) {
+				this.firstStep = firstStep;
 				this.context = context;
 				this.noFlowContext = noFlowContext;
 				this.startIdx = startIdx;
@@ -204,9 +198,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		}
 
 		public ContextVisitor() {
-			//			this.futureContexts = new HashMap<>();
-			this.nextContexts = new HashSet<RegisterValue>();
-			this.contextStack = new Stack<ContextStackItem>();
+			this.contextStack = new Stack<BranchHead>();
 			this.contextOrStack = new Stack<Integer>();
 			this.contextAwareContext = new PatternContext();
 		}
@@ -217,14 +209,17 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		 */
 		public void makeContextAware() {
 			// set first context
-			asmCurrentContext = currentProgram.getProgramContext()
+			RegisterValue initialContext = currentProgram.getProgramContext()
 					.getDisassemblyContext(currentAddress);
-			this.contextStack.add(new ContextStackItem(asmCurrentContext, null, 0));
+			this.contextStack.add(new BranchHead(null, initialContext, null, 0));
 			while (!this.contextStack.isEmpty()) {
 				// process each context branch
-				ContextStackItem csi = this.contextStack.removeLast();
-				asmCurrentContext = csi.context;
-				for (int i = csi.startIdx; i < currentContext.steps.size(); i++) {
+				BranchHead branch = this.contextStack.removeLast();
+				if (branch.firstStep != null) {
+					this.contextAwareContext.steps().add(branch.firstStep);
+				}
+				asmCurrentContext = branch.context;
+				for (int i = branch.startIdx; i < currentContext.steps.size(); i++) {
 					// process each instruction within the context branch
 					Step step = currentContext.steps.get(i);
 					switch (step.getStepType()) {
@@ -238,21 +233,23 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 							break;
 						case LOOKUP:
 							visit(i, ((LookupStep) step).copy());
-							if (csi.noFlowContext != null) {
-								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
+							if (branch.noFlowContext != null) {
+								// if we are at the beginning of a branch and there is a start context, set the context
+								asmCurrentContext = handleNoFlows(branch.noFlowContext, asmCurrentContext);
+								branch.noFlowContext = null;
 								noFlowSave = null;
 							}
 							break;
 						case CONTEXT:
 							visit((Context) step);
-							csi.noFlowContext = null; // user overrides all contexts
+							branch.noFlowContext = null; // user overrides all contexts
 							break;
 						default:
 							visit(step);
-							if (csi.noFlowContext != null) {
+							if (branch.noFlowContext != null) {
 								// if we are at the beginning of a branch and there is a start context, set the context
-								asmCurrentContext = handleNoFlows(csi.noFlowContext, asmCurrentContext);
-								csi.noFlowContext = null;
+								asmCurrentContext = handleNoFlows(branch.noFlowContext, asmCurrentContext);
+								branch.noFlowContext = null;
 								noFlowSave = null;
 							}
 					}
@@ -293,8 +290,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			for (int i = splitMultiStep.getDests().size() - 1; i > 0; i--) {
 				this.contextOrStack.add(this.contextAwareContext.steps().size());
 				this.contextStack
-						.add(new ContextStackItem(asmCurrentContext, noFlowSave,
-							splitMultiStep.getDests().get(i)));
+						.add(new BranchHead(null, asmCurrentContext, noFlowSave, splitMultiStep.getDests().get(i)));
 			}
 			this.contextAwareContext.steps()
 					.add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
@@ -314,32 +310,24 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		/**
 		 * Handles assembly instruction step.
 		 * @param tokenIdx step number of this step in the output of the first visitor
-		 * @param lookupStep the step to process
+		 * @param lookupStep the instruction to assemble
 		 */
 		private void visit(int tokenIdx, LookupStep lookupStep) {
-			lookupStep = assembleInstruction(lookupStep);
-			if (lookupStep == null) {
+			List<LookupStep> lookupSteps = assembleInstruction(lookupStep);
+			if (lookupSteps == null) {
 				return;
 			}
-			this.contextAwareContext.steps().add(lookupStep);
 
-			if (nextContexts.size() == 0 || tokenIdx == currentContext.steps().size() - 1) {
-				if (noFlowSave != null) {
-					// If there are no context changes and a no flow context is waiting to be reverted, then revert for next instruction
-					asmCurrentContext = handleNoFlows(noFlowSave, asmCurrentContext);
-					noFlowSave = null;
-				}
-				return;
+			if (lookupSteps.size() > 1) {
+				// Each lookup step contains all the valid encodings for a certain output context.
+				// Because there is more than one output context, put a split in the results to
+				// split over the different contexts
+				this.contextAwareContext.steps().add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
 			}
-			//			if (!futureContexts.containsKey(currentAddress)) {
-			//				return;
-			//			}
-			//			Object[] nextContexts = futureContexts.get(currentAddress).toArray();
-			// set the next context, and if there are additional contexts, place them on the stack, so
-			// that new branches can be created for those contexts
-			Object[] nextContexts = this.nextContexts.toArray();
+			
+			RegisterValue firstLookupStepContext = lookupSteps.getFirst().getOutputContext();
 			// Determine if the next context is no flow
-			boolean hasNoFlow = checkNoFlow(asmCurrentContext, (RegisterValue) nextContexts[0]);
+			boolean hasNoFlow = checkNoFlow(asmCurrentContext, firstLookupStepContext);
 
 			if (hasNoFlow || noFlowSave == null) {
 				// hasNoFlow is true & noFlowSave is null -> we are encountering a noflow, so save current context and set the noflow context as next context
@@ -348,24 +336,23 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				if (noFlowSave == null && hasNoFlow) {
 					noFlowSave = asmCurrentContext;
 				}
-				asmCurrentContext = (RegisterValue) nextContexts[0];
+				asmCurrentContext = firstLookupStepContext;
 				
 			}
 			else {
 				// revert the noflow context to the original context
-				asmCurrentContext = handleNoFlows(noFlowSave, (RegisterValue) nextContexts[0]);
+				asmCurrentContext = handleNoFlows(noFlowSave, firstLookupStepContext);
 				noFlowSave = null;
 			}
-
-			for (int i = 1; i < nextContexts.length; i++) {
-				this.contextOrStack.add(this.contextAwareContext.steps().size());
+			
+			// add first context branch to result
+			this.contextAwareContext.steps().add(lookupSteps.getFirst());
+			
+			// if there are more branches, add them to a stack to process later
+			for (int i = 1; i < lookupSteps.size(); i++) {
+				this.contextOrStack.add(this.contextAwareContext.steps().size() - 2);
 				this.contextStack
-						.add(new ContextStackItem((RegisterValue) nextContexts[i], noFlowSave,
-							tokenIdx + 1));
-			}
-			if (nextContexts.length > 1) {
-				this.contextAwareContext.steps()
-						.add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
+						.add(new BranchHead(lookupSteps.get(i), lookupSteps.get(i).getOutputContext(), noFlowSave, tokenIdx + 1));
 			}
 		}
 
@@ -394,9 +381,10 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 		/**
 		 * Assembles an assembly instruction.
 		 * @param lookupStep the lookup step containing the instruction to assemble
-		 * @return the lookup step with the encodings results filled in
+		 * @return a list of lookup steps filled in with encodings. Each LookupStep contains a
+		 * different output context (new branch for each context)
 		 */
-		private LookupStep assembleInstruction(LookupStep lookupStep) {
+		private List<LookupStep> assembleInstruction(LookupStep lookupStep) {
 			Collection<AssemblyParseResult> parses = assembler
 					.parseLine(lookupStep.getInstructionText())
 					.stream()
@@ -411,35 +399,34 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				raiseInvalidInstructionException(lookupStep);
 			}
 
-			lookupStep = this.makeLookupStepFromParseResults(lookupStep, parses);
-			if (lookupStep == null) {
+			List<LookupStep> lookupSteps = this.makeLookupStepFromParseResults(lookupStep, parses);
+			if (lookupSteps == null) {
 				return null;
 			}
-			if (lookupStep.isEmpty()) {
+			if (lookupSteps.isEmpty()) {
 				raiseInvalidInstructionException(lookupStep);
 			}
 
-			return lookupStep;
+			return lookupSteps;
 		}
 
 		/**
 		 * Assembles an assembly instruction.
 		 * @param lookupStep the lookup step containing the instruction to assemble
 		 * @param parses the parsed data of the instruction to assemble
-		 * @return the lookup step with the encodings results filled in
+		 * @return a list of lookup steps filled in with encodings. Each LookupStep contains a
+		 * different output context (new branch for each context)
 		 */
-		private LookupStep makeLookupStepFromParseResults(LookupStep lookupStep,
+		private List<LookupStep> makeLookupStepFromParseResults(LookupStep lookupStep,
 				Collection<AssemblyParseResult> parses) {
-
-			LookupStepBuilder builder =
-				new LookupStepBuilder(lookupStep, contextVisitor.contextAwareContext.tables);
 			AssemblyPatternBlock assemblerCtx = AssemblyPatternBlock
 					.fromRegisterValue(contextVisitor.asmCurrentContext);
 
 			System.err.println("Context going into assembler: " + assemblerCtx);
 			this.variantCtx = new ResultMap();
-			this.nextContexts = new HashSet<>();
-
+			
+			// maps output context to a LookupStep containing encodings that produce the output context
+			LinkedHashMap<RegisterValue, LookupStepBuilder> encodingResultsBuilders = new LinkedHashMap<>();
 			for (AssemblyParseResult p : parses) {
 				if (PickledCanary.DEBUG) {
 					// Print each instruction variant
@@ -468,29 +455,48 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 							getContextChanges(pats, contextVisitor.asmCurrentContext);
 						System.err.println("Printing local context: " + contextChanges.localCtx());
 
-						builder.addAssemblyPattern(pats, contextChanges.localCtx());
-
 						AddressMap encodingContextChanges = contextChanges.globalCtx();
 
 						encodingCtx.map.put(pats, encodingContextChanges);
 
 						for (Address a : encodingContextChanges.map.keySet()) {
-							contextVisitor.nextContexts.add(encodingContextChanges.map.get(a));
-//							if (!futureContexts.containsKey(a)) {
-//								futureContexts.put(a, new HashSet<>());
-//							}
-//							futureContexts.get(a).add(encodingContextChanges.get(a));
+							// there are context changes to process
+							// TODO: pickled canary currently assumes that all context changes
+							// occur in the next instruction. This may not always be the case, as
+							// an instruction can set a context for any address
+							RegisterValue outputContext = encodingContextChanges.map.get(a);
+							if (!encodingResultsBuilders.containsKey(outputContext)) {
+								LookupStep lookupStepCopy = lookupStep.copy();
+								lookupStepCopy.setOutputContext(outputContext);
+								encodingResultsBuilders.put(outputContext, new LookupStepBuilder(
+									lookupStepCopy, contextVisitor.contextAwareContext.tables));
+
+							}
+							encodingResultsBuilders.get(outputContext)
+									.addAssemblyPattern(pats, contextChanges.localCtx());
 						}
 						if (encodingContextChanges.map.isEmpty()) {
 							// no context changes means the current context will be the next context
-							contextVisitor.nextContexts.add(asmCurrentContext);
+							if (!encodingResultsBuilders.containsKey(asmCurrentContext)) {
+								LookupStep lookupStepCopy = lookupStep.copy();
+								lookupStepCopy.setOutputContext(asmCurrentContext);
+								encodingResultsBuilders.put(asmCurrentContext,
+									new LookupStepBuilder(lookupStepCopy,
+										contextVisitor.contextAwareContext.tables));
+
+							}
+							encodingResultsBuilders.get(asmCurrentContext).addAssemblyPattern(pats, contextChanges.localCtx());
 						}
 					}
 				}
 				variantCtx.map.put(p, encodingCtx);
 			}
+			List<LookupStep> encodingResults = new ArrayList<>();
+			for (LookupStepBuilder lsb : encodingResultsBuilders.values()) {
+				encodingResults.add(lsb.buildLookupStep());
+			}
 			printContextChanges(this.variantCtx);
-			return builder.buildLookupStep();
+			return encodingResults;
 		}
 		
 		/**
@@ -656,6 +662,7 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			InstructionNode root = new InstructionNode(new LookupStep("ROOT", -1, -1));
 			generateTree(0, root, inputContext.steps);
 			removeDuplicateChildren(root);
+			combineEncodingsWithEqualBranches(root);
 			if (PickledCanary.DEBUG) {
 				System.out.println("Deduplication tree:");
 				printTree(0, root);
@@ -708,7 +715,70 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				removeDuplicateChildren(child);
 			}
 		}
+
+		/**
+		 * An instruction that produces encodings with different output contexts will cause a split
+		 * in the pattern, and each of the encodings with a different output context will be placed
+		 * as the first instruction after the split. Sometimes, the rest of the branches will be
+		 * equal, and therefore, the rest of the branches can be deduplicated, and the encodings in
+		 * the separate output context steps can be combined back together.
+		 * 
+		 * Two siblings with the same instruction text and the same children can be deduplicated.
+		 * Therefore, deduplication is done by:
+		 * 1) tracking siblings that meet the definition for deduplication
+		 * 2) copying all encodings of all siblings into the first sibling
+		 * 3) remove all siblings except the first from the parent's children list
+		 * @param node node to combine instruction encodings with equal branches
+		 */
+		private void combineEncodingsWithEqualBranches(InstructionNode node) {
+			// this hashmap tracks siblings with the same instruction text and children
+			// instruction text          node's children      equal siblings indexes
+			HashMap<String, HashMap<ArrayList<InstructionNode>, ArrayList<Integer>>> deduplicationTracker = new HashMap<>();
+			for (int i = 0; i < node.children.size(); i++) {
+				// this loop puts all siblings that meet the definition for deduplication in a group
+				InstructionNode child = node.children.get(i);
+				combineEncodingsWithEqualBranches(child);
+				if (child.step.getStepType() != StepType.LOOKUP) {
+					continue;
+				}
+				LookupStep step = (LookupStep) child.step;
+				if (!deduplicationTracker.containsKey(step.getInstructionText())) {
+					deduplicationTracker.put(step.getInstructionText(), new HashMap<>());
+				}
+				if (!deduplicationTracker.get(step.getInstructionText()).containsKey(child.children)) {
+					deduplicationTracker.get(step.getInstructionText()).put(child.children, new ArrayList<>());
+				}
+				// group siblings by instruction text and siblings' children
+				deduplicationTracker.get(step.getInstructionText()).get(child.children).add(i);
+			}
+			
+			for (HashMap<ArrayList<InstructionNode>, ArrayList<Integer>> duplicateChildren : deduplicationTracker.values()) {
+				for (ArrayList<Integer> combinableBranches : duplicateChildren.values()) {
+					if (combinableBranches.size() < 2) {
+						// if there's only 1 sibling in a group, no need to deduplicate
+						continue;
+					}
+					
+					// take the first sibling, add all encodings of the other siblings to first
+					// sibling, then remove the other siblings
+					Collections.sort(combinableBranches, Collections.reverseOrder());
+					InstructionNode branchToKeep = node.children.get(combinableBranches.removeLast());
+					LookupStep branchToKeepLookupStep = (LookupStep) branchToKeep.step;
+					for (int idx : combinableBranches) {
+						InstructionNode branchToCombine = node.children.get(idx);
+						LookupStep branchToCombineLookupStep = (LookupStep) branchToCombine.step;
+						branchToKeepLookupStep.combine(branchToCombineLookupStep);
+						node.children.remove(idx);
+					}
+				}
+			}
+		}
 		
+		/**
+		 * Prints out a tree.
+		 * @param indent depth of indent to insert before printing a line
+		 * @param node the tree to print
+		 */
 		private void printTree(int indent, InstructionNode node) {
 			System.out.println("    ".repeat(indent) +  ": " + node.step.toString());
 			for (InstructionNode child : node.children) {

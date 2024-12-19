@@ -45,6 +45,16 @@ public record LookupData(
 	public void putChoice(byte[] value, InstructionEncoding ie) {
 		choices.put(new ByteArrayWrapper(value), ie);
 	}
+	
+	public void combine(Data that) {
+		if (that instanceof LookupData other) {
+			assert Arrays.equals(mask, other.mask);
+			
+			for (ByteArrayWrapper choice : other.choices.keySet()) {
+				choices.put(choice, other.choices.get(choice));
+			}
+		}
+	}
 
 	public void resolveTableIds(AllLookupTables tables) {
 		for (InstructionEncoding ie : choices.values()) {

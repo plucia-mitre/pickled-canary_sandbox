@@ -45,4 +45,10 @@ public interface Data extends JsonSerializable {
 	 */
 	public LookupAndCheckResult doLookupAndCheck(MemBuffer input, int sp, List<LookupTable> tables,
 			SavedData existing);
+
+	/**
+	 * Combine the encodings of another Data into this Data.
+	 * @param that another Data
+	 */
+	public void combine(Data that);
 }
