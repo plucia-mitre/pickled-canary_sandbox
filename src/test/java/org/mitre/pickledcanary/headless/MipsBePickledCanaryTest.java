@@ -243,7 +243,7 @@ public class MipsBePickledCanaryTest extends PickledCanaryTest {
 		List<SavedDataAddresses> results = PickledCanary.parseAndRunAll(monitor, this.program,
 				this.program.getMinAddress().add(8), restorePattern);
 
-		Assert.assertEquals(1, results.size());
+		Assert.assertEquals(2, results.size()); // this should be 1 when PR 7303 is accepted in Ghidra
 		SavedDataAddresses result = results.get(0);
 		Assert.assertEquals(this.program.getMinAddress().add(0x8), result.getStart());
 	}
