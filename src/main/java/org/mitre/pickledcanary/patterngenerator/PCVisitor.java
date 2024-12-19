@@ -214,7 +214,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			this.contextStack.add(new BranchHead(null, initialContext, null, 0));
 			while (!this.contextStack.isEmpty()) {
 				// process each context branch
-				BranchHead branch = this.contextStack.removeLast();
+				// TODO: replace with removeLast() when we have full JDK21 support
+				BranchHead branch = this.contextStack.remove(this.contextStack.size()-1);
 				if (branch.firstStep != null) {
 					this.contextAwareContext.steps().add(branch.firstStep);
 				}
@@ -260,7 +261,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					// add a jump, which will later be filled in with dest of end of pattern
 					this.contextAwareContext.steps().add(new Jmp(0));
 					// add the next destination for a Split or SplitMulti block
-					int correspondingSplitIndex = this.contextOrStack.removeLast();
+					// TODO: replace with removeLast() when we have full JDK21 support
+					int correspondingSplitIndex = this.contextOrStack.remove(this.contextOrStack.size()-1);
 					SplitMulti sm =
 						(SplitMulti) this.contextAwareContext.steps().get(correspondingSplitIndex);
 					sm.addDest(this.contextAwareContext.steps().size());
@@ -324,8 +326,9 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 				// split over the different contexts
 				this.contextAwareContext.steps().add(new SplitMulti(this.contextAwareContext.steps().size() + 1));
 			}
-			
-			RegisterValue firstLookupStepContext = lookupSteps.getFirst().getOutputContext();
+
+			// TODO: replace with getFirst() when we have full JDK21 support
+			RegisterValue firstLookupStepContext = lookupSteps.get(0).getOutputContext();
 			// Determine if the next context is no flow
 			boolean hasNoFlow = checkNoFlow(asmCurrentContext, firstLookupStepContext);
 
@@ -346,7 +349,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			}
 			
 			// add first context branch to result
-			this.contextAwareContext.steps().add(lookupSteps.getFirst());
+			// TODO: replace with getFirst() when we have full JDK21 support
+			this.contextAwareContext.steps().add(lookupSteps.get(0));
 			
 			// if there are more branches, add them to a stack to process later
 			for (int i = 1; i < lookupSteps.size(); i++) {
@@ -762,7 +766,8 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					// take the first sibling, add all encodings of the other siblings to first
 					// sibling, then remove the other siblings
 					Collections.sort(combinableBranches, Collections.reverseOrder());
-					InstructionNode branchToKeep = node.children.get(combinableBranches.removeLast());
+					// TODO: replace remove with removeLast() when we have full JDK21 support
+					InstructionNode branchToKeep = node.children.get(combinableBranches.remove(combinableBranches.size()-1));
 					LookupStep branchToKeepLookupStep = (LookupStep) branchToKeep.step;
 					for (int idx : combinableBranches) {
 						InstructionNode branchToCombine = node.children.get(idx);
@@ -796,12 +801,15 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 			HashMap<InstructionNode, Integer> hashToIdx = new HashMap<>();
 			ArrayList<Step> newSteps = new ArrayList<>();
 			deduplicateTree(root, newSteps, hashToIdx); // the actual deduplication happens here
-			newSteps.removeFirst(); // remove the filler step
+			// TODO: replace with removeFirst() when we have full JDK21 support
+			newSteps.remove(0); // remove the filler step
 			
 			// if the last steps is a jump to the end, that is useless; remove it
-			Step lastStep = newSteps.getLast();
+			// TODO: replace with getLast() when we have full JDK21 support
+			Step lastStep = newSteps.get(newSteps.size() -1);
 			if (lastStep.getStepType() == Step.StepType.JMP && ((Jmp) lastStep).getDest() == -1) {
-				newSteps.removeLast();
+				// TODO: replace with removeLast() when we have full JDK21 support
+				newSteps.remove(newSteps.size() -1);
 			}
 			
 			// resolve the destinations for splits and jumps
@@ -869,10 +877,11 @@ public class PCVisitor extends pc_grammarBaseVisitor<Void> {
 					break;
 				case 1:
 					// there only one next step, so no need to have a split
-					deduplicateTree(branch.children.getFirst(), newSteps, hashToIdx);
-					if (branch.children.getFirst().doJump) {
+					// TODO: Change each of these three get(0) calls to getFirst() when full JDK 21 support is available
+					deduplicateTree(branch.children.get(0), newSteps, hashToIdx);
+					if (branch.children.get(0).doJump) {
 						// if child branch is duplicated, just jump to the branch already seen
-						newSteps.add(new Jmp(hashToIdx.get(branch.children.getFirst())));
+						newSteps.add(new Jmp(hashToIdx.get(branch.children.get(0))));
 					}
 					break;
 				default:
